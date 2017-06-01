@@ -116,7 +116,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	@Override
 	protected void startUp() throws Exception {
-		info.addTechnology("DCBA", Optional.of("0.0.1"), "Discord Core Bot Apple");
+		info.addTechnology("DCBA", Optional.empty(), "Discord Core Bot Apple");
 		info.addTechnology("JDA", Optional.of("3.0"), "Java Discord API");
 
 		jda = new JDABuilder(AccountType.BOT).setToken(config.getString("discord_bot_token"))
