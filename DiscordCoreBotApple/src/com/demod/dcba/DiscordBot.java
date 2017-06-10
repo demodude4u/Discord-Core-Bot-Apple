@@ -80,7 +80,7 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	public void addCommand(CommandDefinition command) {
-		commands.put(command.getName(), command);
+		commands.put(command.getName().toLowerCase(), command);
 	}
 
 	public Optional<String> getCommandPrefix() {
