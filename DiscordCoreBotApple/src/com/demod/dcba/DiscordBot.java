@@ -32,6 +32,7 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<String> commandPrefix = Optional.empty();
 
 	private final JSONObject config;
+
 	private JDA jda;
 
 	DiscordBot() {
@@ -45,6 +46,9 @@ public class DiscordBot extends AbstractIdleService {
 				info.getBotName().ifPresent(n -> builder.addField("Bot Name", n, true));
 				info.getVersion().ifPresent(v -> builder.addField("Bot Version", v, true));
 				info.getSupportMessage().ifPresent(s -> builder.addField("Support", s, true));
+				if (info.isAllowInvite()) {
+					builder.addField("Invite Link", jda.asBot().getInviteUrl(info.getInvitePermissions()), true);
+				}
 				builder.addField("Technologies", info.getTechnologies().stream().collect(Collectors.joining("\n")),
 						false);
 				for (String group : info.getCredits().keySet()) {
@@ -161,5 +165,4 @@ public class DiscordBot extends AbstractIdleService {
 					}
 				}).buildBlocking();
 	}
-
 }

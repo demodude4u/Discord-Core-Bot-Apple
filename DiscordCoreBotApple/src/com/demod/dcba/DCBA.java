@@ -2,6 +2,8 @@ package com.demod.dcba;
 
 import java.util.Optional;
 
+import net.dv8tion.jda.core.Permission;
+
 public final class DCBA {
 
 	public static interface Builder {
@@ -70,6 +72,13 @@ public final class DCBA {
 		}
 
 		@Override
+		public InfoBuilder withInvite(Permission... permissions) {
+			bot.getInfo().setAllowInvite(true);
+			bot.getInfo().setInvitePermissions(permissions);
+			return this;
+		}
+
+		@Override
 		public InfoBuilder withSupport(String supportMessage) {
 			bot.getInfo().setSupport(Optional.of(supportMessage));
 			return this;
@@ -100,6 +109,8 @@ public final class DCBA {
 
 	public static interface InfoBuilder extends Builder {
 		InfoBuilder withCredits(String group, String... names);
+
+		InfoBuilder withInvite(Permission... permissions);
 
 		InfoBuilder withSupport(String supportMessage);
 

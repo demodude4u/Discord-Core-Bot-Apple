@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
+import net.dv8tion.jda.core.Permission;
+
 public class InfoDefinition {
 
 	private Optional<String> botName = Optional.empty();
@@ -13,6 +15,8 @@ public class InfoDefinition {
 	private Optional<String> supportMessage = Optional.empty();
 	private Optional<String> version = Optional.empty();
 	private final List<String> technologies = new ArrayList<>();
+	private boolean allowInvite = false;
+	private Permission[] invitePermissions;
 
 	public void addCredits(String group, String[] names) {
 		List<String> groupNames = credits.computeIfAbsent(group, k -> new ArrayList<>());
@@ -31,6 +35,10 @@ public class InfoDefinition {
 		return credits;
 	}
 
+	public Permission[] getInvitePermissions() {
+		return invitePermissions;
+	}
+
 	public Optional<String> getSupportMessage() {
 		return supportMessage;
 	}
@@ -43,8 +51,20 @@ public class InfoDefinition {
 		return version;
 	}
 
+	public boolean isAllowInvite() {
+		return allowInvite;
+	}
+
+	public void setAllowInvite(boolean allowInvite) {
+		this.allowInvite = allowInvite;
+	}
+
 	public void setBotName(Optional<String> botName) {
 		this.botName = botName;
+	}
+
+	public void setInvitePermissions(Permission[] invitePermissions) {
+		this.invitePermissions = invitePermissions;
 	}
 
 	public void setSupport(Optional<String> supportMessage) {
