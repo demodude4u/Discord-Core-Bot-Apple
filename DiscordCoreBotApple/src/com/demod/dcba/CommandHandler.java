@@ -11,7 +11,7 @@ public interface CommandHandler {
 		default void handleCommand(MessageReceivedEvent event) {
 			String response = handleSimpleResponse(event);
 			if (response != null) {
-				DiscordUtils.replyTo(event, response);
+				DiscordUtils.replyTo(event.getChannel(), response);
 			}
 		}
 

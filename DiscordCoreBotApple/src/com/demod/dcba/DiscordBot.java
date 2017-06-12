@@ -68,7 +68,10 @@ public class DiscordBot extends AbstractIdleService {
 								.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
 								.map(c -> "```" + commandPrefix.orElse("") + c.getName() + "```" + c.getHelp().get())
 								.collect(Collectors.toList());
-						DiscordUtils.replyTo(event, helps);
+						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
+						event.getChannel().sendMessage(
+								"I have sent you a message, " + event.getAuthor().getAsMention() + "! :slight_smile:")
+								.complete();
 					}
 				}));
 
