@@ -47,7 +47,8 @@ public class DiscordBot extends AbstractIdleService {
 						+ commandPrefix.orElse("") + "help` to get a list of commands.", true);
 				info.getSupportMessage().ifPresent(s -> builder.addField("Support", s, true));
 				if (info.isAllowInvite()) {
-					builder.addField("Invite Link", jda.asBot().getInviteUrl(info.getInvitePermissions()), false);
+					builder.addField("Server Invite",
+							"[Link](" + jda.asBot().getInviteUrl(info.getInvitePermissions()) + ")", false);
 				}
 				info.getBotName().ifPresent(n -> builder.addField("Bot Name", n, true));
 				info.getVersion().ifPresent(v -> builder.addField("Bot Version", v, true));
