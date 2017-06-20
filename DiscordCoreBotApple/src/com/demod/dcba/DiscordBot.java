@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.demod.dcba.CommandHandler.SimpleResponse;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 import net.dv8tion.jda.core.AccountType;
@@ -86,6 +87,14 @@ public class DiscordBot extends AbstractIdleService {
 							event.getChannel().sendMessage("```Prefix: " + commandPrefix.get() + "```").complete();
 						}
 					}));
+		}
+
+		if (config.has("simple")) {
+			JSONObject secretJson = config.getJSONObject("simple");
+			secretJson.keySet().forEach(k -> {
+				String response = secretJson.getString(k);
+				commands.put(k, new CommandDefinition(k, (SimpleResponse) (e -> response)));
+			});
 		}
 	}
 
