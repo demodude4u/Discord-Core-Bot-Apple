@@ -110,6 +110,10 @@ public class DiscordBot extends AbstractIdleService {
 		return info;
 	}
 
+	public JDA getJDA() {
+		return jda;
+	}
+
 	private JSONObject loadConfig() {
 		try (Scanner scanner = new Scanner(new FileInputStream("config.json"), "UTF-8")) {
 			scanner.useDelimiter("\\A");
