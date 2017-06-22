@@ -85,16 +85,6 @@ public class DiscordBot extends AbstractIdleService {
 					}
 				}));
 
-		if (commandPrefix.isPresent()) {
-			commands.put("prefix",
-					new CommandDefinition("prefix", "Shows the prefix used by this bot.", new CommandHandler() {
-						@Override
-						public void handleCommand(MessageReceivedEvent event) {
-							event.getChannel().sendMessage("```Prefix: " + commandPrefix.get() + "```").complete();
-						}
-					}));
-		}
-
 		if (config.has("simple")) {
 			JSONObject secretJson = config.getJSONObject("simple");
 			secretJson.keySet().forEach(k -> {
@@ -147,6 +137,20 @@ public class DiscordBot extends AbstractIdleService {
 	protected void startUp() throws Exception {
 		info.addTechnology("DCBA", Optional.empty(), "Discord Core Bot Apple");
 		info.addTechnology("JDA", Optional.of("3.0"), "Java Discord API");
+
+		if (config.has("discord_command_prefix")) {
+			setCommandPrefix(Optional.of(config.getString("discord_command_prefix")));
+		}
+
+		if (commandPrefix.isPresent()) {
+			commands.put("prefix",
+					new CommandDefinition("prefix", "Shows the prefix used by this bot.", new CommandHandler() {
+						@Override
+						public void handleCommand(MessageReceivedEvent event) {
+							event.getChannel().sendMessage("```Prefix: " + commandPrefix.get() + "```").complete();
+						}
+					}));
+		}
 
 		jda = new JDABuilder(AccountType.BOT).setToken(config.getString("discord_bot_token"))
 				.addEventListener(new ListenerAdapter() {
