@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
@@ -14,6 +18,7 @@ import org.json.JSONObject;
 
 import com.demod.dcba.CommandHandler.SimpleResponse;
 import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Uninterruptibles;
 
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.EmbedBuilder;
@@ -29,6 +34,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	private final Map<String, CommandDefinition> commands = new LinkedHashMap<>();
 	private final InfoDefinition info = new InfoDefinition();
+	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	private Optional<String> commandPrefix = Optional.empty();
 
@@ -175,8 +181,19 @@ public class DiscordBot extends AbstractIdleService {
 									String command = split[0];
 									CommandDefinition commandDefinition = commands.get(command.toLowerCase());
 									if (commandDefinition != null) {
-										event.getChannel().sendTyping().complete();
-										commandDefinition.getHandler().handleCommand(event);
+										AtomicBoolean keepTyping = new AtomicBoolean(true);
+										executorService.submit(() -> {
+											while (keepTyping.get()) {
+												event.getChannel().sendTyping().complete();
+												Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+											}
+										});
+										try {
+											commandDefinition.getHandler().handleCommand(event);
+										} catch (Exception e) {
+											e.printStackTrace();
+										}
+										keepTyping.set(false);
 									}
 								}
 							}
