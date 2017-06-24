@@ -152,7 +152,9 @@ public class DiscordBot extends AbstractIdleService {
 					}));
 		}
 
-		jda = new JDABuilder(AccountType.BOT).setToken(config.getString("discord_bot_token"))
+		jda = new JDABuilder(AccountType.BOT)//
+				.setToken(config.getString("discord_bot_token"))//
+				.setEnableShutdownHook(false)//
 				.addEventListener(new ListenerAdapter() {
 					@Override
 					public void onMessageReceived(MessageReceivedEvent event) {
