@@ -24,6 +24,7 @@ import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.PrivateChannel;
@@ -79,9 +80,10 @@ public class DiscordBot extends AbstractIdleService {
 								.map(c -> "```" + commandPrefix.orElse("") + c.getName() + "```" + c.getHelp().get())
 								.collect(Collectors.toList());
 						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
-						event.getChannel().sendMessage(
-								"I have sent you a message, " + event.getAuthor().getAsMention() + "! :slight_smile:")
-								.complete();
+						if (!event.isFromType(ChannelType.PRIVATE)) {
+							event.getChannel().sendMessage("I have sent you a message, "
+									+ event.getAuthor().getAsMention() + "! :slight_smile:").complete();
+						}
 					}
 				}));
 
@@ -187,8 +189,10 @@ public class DiscordBot extends AbstractIdleService {
 									String command = split[0];
 									CommandDefinition commandDefinition = commands.get(command.toLowerCase());
 									if (commandDefinition != null) {
+										event.getChannel().sendTyping().complete();
 										AtomicBoolean keepTyping = new AtomicBoolean(true);
 										executorService.submit(() -> {
+											Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
 											while (keepTyping.get()) {
 												event.getChannel().sendTyping().complete();
 												Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
