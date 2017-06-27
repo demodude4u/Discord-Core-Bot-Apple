@@ -39,12 +39,12 @@ public class DiscordBot extends AbstractIdleService {
 
 	private Optional<String> commandPrefix = Optional.empty();
 
-	private final JSONObject config;
+	private final JSONObject configJson;
 
 	private JDA jda;
 
 	DiscordBot() {
-		config = loadConfig();
+		configJson = loadConfig();
 
 		commands.put("info", new CommandDefinition("info", "Shows information about this bot.", new CommandHandler() {
 			@Override
@@ -87,8 +87,8 @@ public class DiscordBot extends AbstractIdleService {
 					}
 				}));
 
-		if (config.has("simple")) {
-			JSONObject secretJson = config.getJSONObject("simple");
+		if (configJson.has("simple")) {
+			JSONObject secretJson = configJson.getJSONObject("simple");
 			secretJson.keySet().forEach(k -> {
 				String response = secretJson.getString(k);
 				commands.put(k, new CommandDefinition(k, (SimpleResponse) (e -> response)));
@@ -115,7 +115,7 @@ public class DiscordBot extends AbstractIdleService {
 	private JSONObject loadConfig() {
 		try (Scanner scanner = new Scanner(new FileInputStream("config.json"), "UTF-8")) {
 			scanner.useDelimiter("\\A");
-			return new JSONObject(scanner.next());
+			return new JSONObject(scanner.next()).getJSONObject("discord");
 		} catch (JSONException | IOException e) {
 			e.printStackTrace();
 			System.err.println("################################");
@@ -140,8 +140,8 @@ public class DiscordBot extends AbstractIdleService {
 		info.addTechnology("DCBA", Optional.empty(), "Discord Core Bot Apple");
 		info.addTechnology("JDA", Optional.of("3.0"), "Java Discord API");
 
-		if (config.has("discord_command_prefix")) {
-			setCommandPrefix(Optional.of(config.getString("discord_command_prefix")));
+		if (configJson.has("command_prefix")) {
+			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
 		}
 
 		if (commandPrefix.isPresent()) {
@@ -155,7 +155,7 @@ public class DiscordBot extends AbstractIdleService {
 		}
 
 		jda = new JDABuilder(AccountType.BOT)//
-				.setToken(config.getString("discord_bot_token"))//
+				.setToken(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//
 				.addEventListener(new ListenerAdapter() {
 					@Override
