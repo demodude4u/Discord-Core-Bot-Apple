@@ -58,13 +58,13 @@ public class DiscordBot extends AbstractIdleService {
 						effectivePrefix.ifPresent(p -> builder.addField("Command Prefix", p, true));
 						builder.addField("Command Help", effectivePrefix.map(s -> "Type").orElse("Mention me and type")
 								+ " `" + effectivePrefix.orElse("") + "help` to get a list of commands.", true);
-						info.getSupportMessage().ifPresent(s -> builder.addField("Support", s, true));
-						if (info.isAllowInvite()) {
-							builder.addField("Server Invite",
-									"[Link](" + jda.asBot().getInviteUrl(info.getInvitePermissions()) + ")", false);
-						}
+						info.getSupportMessage().ifPresent(s -> builder.addField("Support", s, false));
 						info.getBotName().ifPresent(n -> builder.addField("Bot Name", n, true));
 						info.getVersion().ifPresent(v -> builder.addField("Bot Version", v, true));
+						if (info.isAllowInvite()) {
+							builder.addField("Server Invite",
+									"[Link](" + jda.asBot().getInviteUrl(info.getInvitePermissions()) + ")", true);
+						}
 						builder.addField("Technologies",
 								info.getTechnologies().stream().collect(Collectors.joining("\n")), false);
 						for (String group : info.getCredits().keySet()) {
@@ -198,8 +198,9 @@ public class DiscordBot extends AbstractIdleService {
 
 	@Override
 	protected void startUp() throws Exception {
-		info.addTechnology("DCBA", Optional.empty(), "Discord Core Bot Apple");
-		info.addTechnology("JDA", Optional.of("3.0"), "Java Discord API");
+		info.addTechnology("[DCBA](https://github.com/demodude4u/Discord-Core-Bot-Apple)", Optional.empty(),
+				"Discord Core Bot Apple");
+		info.addTechnology("[JDA](https://github.com/DV8FromTheWorld/JDA)", Optional.of("3.0"), "Java Discord API");
 
 		if (configJson.has("command_prefix")) {
 			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
