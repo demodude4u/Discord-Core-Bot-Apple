@@ -9,6 +9,10 @@ public final class DCBA {
 	public static interface Builder {
 		CommandBuilder addCommand(String command, CommandHandler handler);
 
+		default CommandBuilder addCommand(String command, CommandHandler.NoArgHandler handler) {
+			return addCommand(command, (CommandHandler) handler);
+		}
+
 		default CommandBuilder addCommand(String command, CommandHandler.SimpleResponse handler) {
 			return addCommand(command, (CommandHandler) handler);
 		}

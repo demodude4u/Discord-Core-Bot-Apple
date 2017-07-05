@@ -8,15 +8,16 @@ public class CommandDefinition {
 	private Optional<String> help = Optional.empty();
 	private boolean adminOnly = false;
 
+	public CommandDefinition(String name, boolean adminOnly, String help, CommandHandler handler) {
+		this.name = name;
+		this.adminOnly = adminOnly;
+		this.handler = handler;
+		this.help = Optional.of(help);
+	}
+
 	public CommandDefinition(String name, CommandHandler handler) {
 		this.name = name;
 		this.handler = handler;
-	}
-
-	public CommandDefinition(String name, String help, CommandHandler handler) {
-		this.name = name;
-		this.handler = handler;
-		this.help = Optional.of(help);
 	}
 
 	public CommandHandler getHandler() {
