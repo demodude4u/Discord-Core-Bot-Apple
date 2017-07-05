@@ -39,6 +39,12 @@ public final class DCBA {
 		}
 
 		@Override
+		public CommandBuilder adminOnly() {
+			command.setAdminOnly(true);
+			return this;
+		}
+
+		@Override
 		public DiscordBot create() {
 			if (command != null) {
 				bot.addCommand(command);
@@ -104,6 +110,8 @@ public final class DCBA {
 	}
 
 	public static interface CommandBuilder extends Builder {
+		CommandBuilder adminOnly();
+
 		CommandBuilder withHelp(String description);
 	}
 

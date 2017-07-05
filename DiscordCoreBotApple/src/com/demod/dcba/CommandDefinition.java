@@ -6,6 +6,7 @@ public class CommandDefinition {
 	private final String name;
 	private final CommandHandler handler;
 	private Optional<String> help = Optional.empty();
+	private boolean adminOnly = false;
 
 	public CommandDefinition(String name, CommandHandler handler) {
 		this.name = name;
@@ -28,6 +29,14 @@ public class CommandDefinition {
 
 	public String getName() {
 		return name;
+	}
+
+	public boolean isAdminOnly() {
+		return adminOnly;
+	}
+
+	public void setAdminOnly(boolean adminOnly) {
+		this.adminOnly = adminOnly;
 	}
 
 	public void setHelp(Optional<String> help) {

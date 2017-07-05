@@ -24,6 +24,7 @@ import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
@@ -75,9 +76,13 @@ public class DiscordBot extends AbstractIdleService {
 				new CommandDefinition("help", "Lists the commands available for this bot.", new CommandHandler() {
 					@Override
 					public void handleCommand(MessageReceivedEvent event) {
-						List<String> helps = commands.values().stream().filter(c -> c.getHelp().isPresent())
+						boolean showAdmin = event.getChannelType() != ChannelType.PRIVATE
+								&& event.getMember().hasPermission(Permission.ADMINISTRATOR);
+						List<String> helps = commands.values().stream()
+								.filter(c -> c.getHelp().isPresent() && (!c.isAdminOnly() || showAdmin))
 								.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
-								.map(c -> "```" + commandPrefix.orElse("") + c.getName() + "```" + c.getHelp().get())
+								.map(c -> "```" + commandPrefix.orElse("") + c.getName()
+										+ (c.isAdminOnly() ? " (ADMIN ONLY)" : "") + "```" + c.getHelp().get())
 								.collect(Collectors.toList());
 						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
 						if (!event.isFromType(ChannelType.PRIVATE)) {
@@ -189,21 +194,32 @@ public class DiscordBot extends AbstractIdleService {
 									String command = split[0];
 									CommandDefinition commandDefinition = commands.get(command.toLowerCase());
 									if (commandDefinition != null) {
-										event.getChannel().sendTyping().complete();
-										AtomicBoolean keepTyping = new AtomicBoolean(true);
-										executorService.submit(() -> {
-											Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
-											while (keepTyping.get()) {
-												event.getChannel().sendTyping().complete();
-												Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+										boolean isPermitted = true;
+										if (commandDefinition.isAdminOnly()) {
+											if (isPrivateChannel) {
+												isPermitted = false;
+											} else {
+												isPermitted = event.getMember().hasPermission(Permission.ADMINISTRATOR);
 											}
-										});
-										try {
-											commandDefinition.getHandler().handleCommand(event);
-										} catch (Exception e) {
-											e.printStackTrace();
 										}
-										keepTyping.set(false);
+
+										if (isPermitted) {
+											event.getChannel().sendTyping().complete();
+											AtomicBoolean keepTyping = new AtomicBoolean(true);
+											executorService.submit(() -> {
+												Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+												while (keepTyping.get()) {
+													event.getChannel().sendTyping().complete();
+													Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+												}
+											});
+											try {
+												commandDefinition.getHandler().handleCommand(event);
+											} catch (Exception e) {
+												e.printStackTrace();
+											}
+											keepTyping.set(false);
+										}
 									}
 								}
 							}
