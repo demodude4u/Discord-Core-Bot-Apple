@@ -236,41 +236,37 @@ public class DiscordBot extends AbstractIdleService {
 
 						if (!event.getAuthor().isBot()
 								&& (isPrivateChannel || startsWithMentionMe || startsWithCommandPrefix)) {
-							if (rawContent.isEmpty()) {
-								commands.get("info").getHandler().handleCommand(event, new String[0]);
-							} else {
-								String[] split = rawContent.split("\\s+");
-								if (split.length > 0) {
-									String command = split[0];
-									String[] args = Arrays.copyOfRange(split, 1, split.length);
-									CommandDefinition commandDefinition = commands.get(command.toLowerCase());
-									if (commandDefinition != null) {
-										boolean isPermitted = true;
-										if (commandDefinition.isAdminOnly()) {
-											if (isPrivateChannel) {
-												isPermitted = false;
-											} else {
-												isPermitted = event.getMember().hasPermission(Permission.ADMINISTRATOR);
-											}
+							String[] split = rawContent.split("\\s+");
+							if (split.length > 0) {
+								String command = split[0];
+								String[] args = Arrays.copyOfRange(split, 1, split.length);
+								CommandDefinition commandDefinition = commands.get(command.toLowerCase());
+								if (commandDefinition != null) {
+									boolean isPermitted = true;
+									if (commandDefinition.isAdminOnly()) {
+										if (isPrivateChannel) {
+											isPermitted = false;
+										} else {
+											isPermitted = event.getMember().hasPermission(Permission.ADMINISTRATOR);
 										}
+									}
 
-										if (isPermitted) {
-											event.getChannel().sendTyping().complete();
-											AtomicBoolean keepTyping = new AtomicBoolean(true);
-											executorService.submit(() -> {
+									if (isPermitted) {
+										event.getChannel().sendTyping().complete();
+										AtomicBoolean keepTyping = new AtomicBoolean(true);
+										executorService.submit(() -> {
+											Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
+											while (keepTyping.get()) {
+												event.getChannel().sendTyping().complete();
 												Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
-												while (keepTyping.get()) {
-													event.getChannel().sendTyping().complete();
-													Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
-												}
-											});
-											try {
-												commandDefinition.getHandler().handleCommand(event, args);
-											} catch (Exception e) {
-												e.printStackTrace();
 											}
-											keepTyping.set(false);
+										});
+										try {
+											commandDefinition.getHandler().handleCommand(event, args);
+										} catch (Exception e) {
+											e.printStackTrace();
 										}
+										keepTyping.set(false);
 									}
 								}
 							}
