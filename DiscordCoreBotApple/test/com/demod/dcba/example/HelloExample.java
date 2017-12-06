@@ -12,6 +12,7 @@ public class HelloExample {
 				.withCommandPrefix("!")//
 				//
 				.addCommand("hello", (event) -> "Hi " + event.getAuthor().getAsMention() + "!")//
+				.withAliases("hi", "hey", "howdy")//
 				.withHelp("The bot will say hi to you!")//
 				//
 				.addCommand("helloAdmin", (event) -> "Hi admin " + event.getAuthor().getAsMention() + "!")//

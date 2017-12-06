@@ -64,6 +64,12 @@ public final class DCBA {
 		}
 
 		@Override
+		public CommandBuilder withAliases(String... aliases) {
+			command.setAliases(Optional.of(aliases));
+			return this;
+		}
+
+		@Override
 		public Builder withCommandPrefix(String commandPrefix) {
 			bot.setCommandPrefix(Optional.of(commandPrefix));
 			return this;
@@ -115,6 +121,8 @@ public final class DCBA {
 
 	public static interface CommandBuilder extends Builder {
 		CommandBuilder adminOnly();
+
+		CommandBuilder withAliases(String... aliases);
 
 		CommandBuilder withHelp(String description);
 	}

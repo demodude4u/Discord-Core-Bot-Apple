@@ -148,6 +148,11 @@ public class DiscordBot extends AbstractIdleService {
 
 	public void addCommand(CommandDefinition command) {
 		commands.put(command.getName().toLowerCase(), command);
+		command.getAliases().ifPresent(aliases -> {
+			for (String alias : aliases) {
+				commands.put(alias.toLowerCase(), command);
+			}
+		});
 	}
 
 	public Optional<String> getCommandPrefix() {
