@@ -6,24 +6,19 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 public interface CommandHandler {
 
 	public interface NoArgHandler extends CommandHandler {
-		void handleCommand(MessageReceivedEvent event);
+		void handleCommand(MessageReceivedEvent event) throws Exception;
 
 		@Override
-		default void handleCommand(MessageReceivedEvent event, String[] args) {
+		default void handleCommand(MessageReceivedEvent event, String[] args) throws Exception {
 			handleCommand(event);
 		}
 	}
 
 	public interface SimpleArgResponse extends CommandHandler {
 		@Override
-		default void handleCommand(MessageReceivedEvent event, String[] args) {
+		default void handleCommand(MessageReceivedEvent event, String[] args) throws Exception {
 			String response;
-			try {
-				response = handleSimpleResponse(event, args);
-			} catch (Exception e) {
-				e.printStackTrace();
-				response = "Error: [" + e.getClass().getSimpleName() + "] " + e.getMessage();
-			}
+			response = handleSimpleResponse(event, args);
 			if (response != null) {
 				DiscordUtils.replyTo(event.getChannel(), response);
 			}
@@ -42,5 +37,5 @@ public interface CommandHandler {
 		}
 	}
 
-	void handleCommand(MessageReceivedEvent event, String[] args);
+	void handleCommand(MessageReceivedEvent event, String[] args) throws Exception;
 }

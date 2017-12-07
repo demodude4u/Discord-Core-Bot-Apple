@@ -41,7 +41,9 @@ public class DiscordBot extends AbstractIdleService {
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	private Optional<String> commandPrefix = Optional.empty();
-	private Optional<NoArgHandler> textWatcher = Optional.empty();
+	private Optional<TextWatcher> textWatcher = Optional.empty();
+
+	private ExceptionHandler exceptionHandler;
 
 	private final JSONObject configJson;
 
@@ -145,6 +147,12 @@ public class DiscordBot extends AbstractIdleService {
 				commands.put(k, new CommandDefinition(k, (SimpleResponse) (e -> response)));
 			});
 		}
+
+		exceptionHandler = (command, event, e) -> {
+			e.printStackTrace();
+			DiscordUtils.replyTo(event.getChannel(), "Unhandled Error: [" + e.getClass().getSimpleName() + "] "
+					+ ((e.getMessage() != null) ? e.getMessage() : ""));
+		};
 	}
 
 	public void addCommand(CommandDefinition command) {
@@ -197,7 +205,11 @@ public class DiscordBot extends AbstractIdleService {
 		this.commandPrefix = commandPrefix;
 	}
 
-	public void setTextWatcher(Optional<NoArgHandler> textWatcher) {
+	public void setExceptionHandler(ExceptionHandler exceptionHandler) {
+		this.exceptionHandler = exceptionHandler;
+	}
+
+	public void setTextWatcher(Optional<TextWatcher> textWatcher) {
 		this.textWatcher = textWatcher;
 	}
 
@@ -223,7 +235,7 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onMessageReceived(MessageReceivedEvent event) {
 						if (textWatcher.isPresent()) {
-							textWatcher.get().handleCommand(event);
+							textWatcher.get().seenMessage(event);
 						}
 
 						Message message = event.getMessage();
@@ -278,7 +290,7 @@ public class DiscordBot extends AbstractIdleService {
 										try {
 											commandDefinition.getHandler().handleCommand(event, args);
 										} catch (Exception e) {
-											e.printStackTrace();
+											exceptionHandler.handleException(commandDefinition, event, e);
 										}
 										keepTyping.set(false);
 									}

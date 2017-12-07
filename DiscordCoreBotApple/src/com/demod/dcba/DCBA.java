@@ -2,8 +2,6 @@ package com.demod.dcba;
 
 import java.util.Optional;
 
-import com.demod.dcba.CommandHandler.NoArgHandler;
-
 import net.dv8tion.jda.core.Permission;
 
 public final class DCBA {
@@ -23,10 +21,10 @@ public final class DCBA {
 			return addCommand(command, (CommandHandler) handler);
 		}
 
-		Builder addTextWatcher(CommandHandler.NoArgHandler handler);
+		Builder addTextWatcher(TextWatcher watcher);
 
-		default Builder addTextWatcher(CommandHandler.SimpleResponse handler) {
-			return addTextWatcher((CommandHandler.NoArgHandler) handler);
+		default Builder addTextWatcher(TextWatcher.SimpleWatcher watcher) {
+			return addTextWatcher((TextWatcher) watcher);
 		}
 
 		DiscordBot create();
@@ -34,6 +32,8 @@ public final class DCBA {
 		InfoBuilder setInfo(String botName);
 
 		Builder withCommandPrefix(String commandPrefix);
+
+		Builder withExceptionHandler(ExceptionHandler handler);
 	}
 
 	private static class BuilderImpl implements Builder, CommandBuilder, InfoBuilder {
@@ -55,8 +55,8 @@ public final class DCBA {
 		}
 
 		@Override
-		public Builder addTextWatcher(NoArgHandler handler) {
-			bot.setTextWatcher(Optional.of(handler));
+		public Builder addTextWatcher(TextWatcher watcher) {
+			bot.setTextWatcher(Optional.of(watcher));
 			return this;
 		}
 
@@ -96,6 +96,12 @@ public final class DCBA {
 		@Override
 		public InfoBuilder withCredits(String group, String... names) {
 			bot.getInfo().addCredits(group, names);
+			return this;
+		}
+
+		@Override
+		public Builder withExceptionHandler(ExceptionHandler handler) {
+			bot.setExceptionHandler(handler);
 			return this;
 		}
 
