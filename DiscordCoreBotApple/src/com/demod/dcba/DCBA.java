@@ -2,6 +2,8 @@ package com.demod.dcba;
 
 import java.util.Optional;
 
+import com.demod.dcba.CommandHandler.NoArgHandler;
+
 import net.dv8tion.jda.core.Permission;
 
 public final class DCBA {
@@ -15,6 +17,12 @@ public final class DCBA {
 
 		default CommandBuilder addCommand(String command, CommandHandler.SimpleResponse handler) {
 			return addCommand(command, (CommandHandler) handler);
+		}
+
+		Builder addTextWatcher(CommandHandler.NoArgHandler handler);
+
+		default Builder addTextWatcher(CommandHandler.SimpleResponse handler) {
+			return addTextWatcher((CommandHandler.NoArgHandler) handler);
 		}
 
 		DiscordBot create();
@@ -39,6 +47,12 @@ public final class DCBA {
 				command = null;
 			}
 			command = new CommandDefinition(name, handler);
+			return this;
+		}
+
+		@Override
+		public Builder addTextWatcher(NoArgHandler handler) {
+			bot.setTextWatcher(Optional.of(handler));
 			return this;
 		}
 

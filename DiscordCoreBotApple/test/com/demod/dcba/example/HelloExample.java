@@ -19,6 +19,10 @@ public class HelloExample {
 				.adminOnly()//
 				.withHelp("The bot will say hi to you, and mention you as an admin!")//
 				//
+				.addTextWatcher(
+						(event) -> System.out.println(event.getGuild().getName() + " #" + event.getChannel().getName()
+								+ " " + event.getAuthor().getName() + " -> " + event.getMessage().getContent()))//
+				//
 				.create();
 
 		bot.startAsync().awaitRunning();

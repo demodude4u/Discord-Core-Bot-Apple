@@ -15,9 +15,9 @@ public interface CommandHandler {
 	}
 
 	@FunctionalInterface
-	public interface SimpleResponse extends CommandHandler {
+	public interface SimpleResponse extends CommandHandler.NoArgHandler {
 		@Override
-		default void handleCommand(MessageReceivedEvent event, String[] args) {
+		default void handleCommand(MessageReceivedEvent event) {
 			String response = handleSimpleResponse(event);
 			if (response != null) {
 				DiscordUtils.replyTo(event.getChannel(), response);

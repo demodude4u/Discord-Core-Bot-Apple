@@ -41,6 +41,7 @@ public class DiscordBot extends AbstractIdleService {
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	private Optional<String> commandPrefix = Optional.empty();
+	private Optional<NoArgHandler> textWatcher = Optional.empty();
 
 	private final JSONObject configJson;
 
@@ -196,6 +197,10 @@ public class DiscordBot extends AbstractIdleService {
 		this.commandPrefix = commandPrefix;
 	}
 
+	public void setTextWatcher(Optional<NoArgHandler> textWatcher) {
+		this.textWatcher = textWatcher;
+	}
+
 	@Override
 	protected void shutDown() throws Exception {
 		jda.shutdown();
@@ -217,6 +222,10 @@ public class DiscordBot extends AbstractIdleService {
 				.addEventListener(new ListenerAdapter() {
 					@Override
 					public void onMessageReceived(MessageReceivedEvent event) {
+						if (textWatcher.isPresent()) {
+							textWatcher.get().handleCommand(event);
+						}
+
 						Message message = event.getMessage();
 						MessageChannel channel = message.getChannel();
 						String rawContent = message.getRawContent().trim();
