@@ -17,26 +17,29 @@ public interface CommandHandler {
 	public interface SimpleArgResponse extends CommandHandler {
 		@Override
 		default void handleCommand(MessageReceivedEvent event, String[] args) {
-			String response = handleSimpleResponse(event, args);
+			String response;
+			try {
+				response = handleSimpleResponse(event, args);
+			} catch (Exception e) {
+				e.printStackTrace();
+				response = "Error: [" + e.getClass().getSimpleName() + "] " + e.getMessage();
+			}
 			if (response != null) {
 				DiscordUtils.replyTo(event.getChannel(), response);
 			}
 		}
 
-		String handleSimpleResponse(MessageReceivedEvent event, String[] args);
+		String handleSimpleResponse(MessageReceivedEvent event, String[] args) throws Exception;
 	}
 
 	@FunctionalInterface
-	public interface SimpleResponse extends CommandHandler.NoArgHandler {
-		@Override
-		default void handleCommand(MessageReceivedEvent event) {
-			String response = handleSimpleResponse(event);
-			if (response != null) {
-				DiscordUtils.replyTo(event.getChannel(), response);
-			}
-		}
+	public interface SimpleResponse extends SimpleArgResponse {
+		String handleSimpleResponse(MessageReceivedEvent event) throws Exception;
 
-		String handleSimpleResponse(MessageReceivedEvent event);
+		@Override
+		default String handleSimpleResponse(MessageReceivedEvent event, String[] args) throws Exception {
+			return handleSimpleResponse(event);
+		}
 	}
 
 	void handleCommand(MessageReceivedEvent event, String[] args);
