@@ -21,6 +21,12 @@ public final class DCBA {
 			return addCommand(command, (CommandHandler) handler);
 		}
 
+		Builder addReactionWatcher(ReactionWatcher watcher);
+
+		default Builder addReactionWatcher(ReactionWatcher.SimpleWatcher watcher) {
+			return addReactionWatcher((ReactionWatcher) watcher);
+		}
+
 		Builder addTextWatcher(TextWatcher watcher);
 
 		default Builder addTextWatcher(TextWatcher.SimpleWatcher watcher) {
@@ -51,6 +57,12 @@ public final class DCBA {
 				command = null;
 			}
 			command = new CommandDefinition(name, handler);
+			return this;
+		}
+
+		@Override
+		public Builder addReactionWatcher(ReactionWatcher watcher) {
+			bot.setReactionWatcher(Optional.of(watcher));
 			return this;
 		}
 

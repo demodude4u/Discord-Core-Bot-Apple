@@ -32,6 +32,9 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.core.events.message.react.MessageReactionRemoveAllEvent;
+import net.dv8tion.jda.core.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 public class DiscordBot extends AbstractIdleService {
@@ -42,6 +45,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<TextWatcher> textWatcher = Optional.empty();
+	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 
 	private ExceptionHandler exceptionHandler;
 
@@ -209,6 +213,10 @@ public class DiscordBot extends AbstractIdleService {
 		this.exceptionHandler = exceptionHandler;
 	}
 
+	public void setReactionWatcher(Optional<ReactionWatcher> reactionWatcher) {
+		this.reactionWatcher = reactionWatcher;
+	}
+
 	public void setTextWatcher(Optional<TextWatcher> textWatcher) {
 		this.textWatcher = textWatcher;
 	}
@@ -232,6 +240,27 @@ public class DiscordBot extends AbstractIdleService {
 				.setToken(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//
 				.addEventListener(new ListenerAdapter() {
+					@Override
+					public void onMessageReactionAdd(MessageReactionAddEvent event) {
+						if (reactionWatcher.isPresent()) {
+							reactionWatcher.get().seenReaction(event);
+						}
+					}
+
+					@Override
+					public void onMessageReactionRemove(MessageReactionRemoveEvent event) {
+						if (reactionWatcher.isPresent()) {
+							reactionWatcher.get().seenReactionRemoved(event);
+						}
+					}
+
+					@Override
+					public void onMessageReactionRemoveAll(MessageReactionRemoveAllEvent event) {
+						if (reactionWatcher.isPresent()) {
+							reactionWatcher.get().seenAllReactionRemoved(event);
+						}
+					}
+
 					@Override
 					public void onMessageReceived(MessageReceivedEvent event) {
 						if (textWatcher.isPresent()) {
