@@ -35,6 +35,8 @@ public final class DCBA {
 
 		DiscordBot create();
 
+		Builder ignorePrivateChannels();
+
 		InfoBuilder setInfo(String botName);
 
 		Builder withCommandPrefix(String commandPrefix);
@@ -85,6 +87,12 @@ public final class DCBA {
 				command = null;
 			}
 			return bot;
+		}
+
+		@Override
+		public Builder ignorePrivateChannels() {
+			bot.setIgnorePrivateChannels(true);
+			return this;
 		}
 
 		@Override

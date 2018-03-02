@@ -46,6 +46,7 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<TextWatcher> textWatcher = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
+	private boolean ignorePrivateChannels = false;
 
 	private ExceptionHandler exceptionHandler;
 
@@ -213,6 +214,10 @@ public class DiscordBot extends AbstractIdleService {
 		this.exceptionHandler = exceptionHandler;
 	}
 
+	public void setIgnorePrivateChannels(boolean ignorePrivateChannels) {
+		this.ignorePrivateChannels = ignorePrivateChannels;
+	}
+
 	public void setReactionWatcher(Optional<ReactionWatcher> reactionWatcher) {
 		this.reactionWatcher = reactionWatcher;
 	}
@@ -274,6 +279,9 @@ public class DiscordBot extends AbstractIdleService {
 						String mentionMe = event.getJDA().getSelfUser().getAsMention();
 
 						boolean isPrivateChannel = channel instanceof PrivateChannel;
+						if (isPrivateChannel && ignorePrivateChannels) {
+							return;
+						}
 
 						boolean startsWithMentionMe = message.getMentionedUsers().stream()
 								.anyMatch(u -> u.getIdLong() == event.getJDA().getSelfUser().getIdLong())
