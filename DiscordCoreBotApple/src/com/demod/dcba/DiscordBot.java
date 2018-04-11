@@ -47,6 +47,7 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<TextWatcher> textWatcher = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 	private boolean ignorePrivateChannels = false;
+	private boolean selfBot = false;
 
 	private ExceptionHandler exceptionHandler;
 
@@ -56,102 +57,6 @@ public class DiscordBot extends AbstractIdleService {
 
 	DiscordBot() {
 		configJson = loadConfig();
-
-		commands.put("info",
-				new CommandDefinition("info", false, "Shows information about this bot.", new NoArgHandler() {
-					@Override
-					public void handleCommand(MessageReceivedEvent event) {
-						EmbedBuilder builder = new EmbedBuilder();
-						Optional<String> effectivePrefix = getEffectivePrefix(event);
-						effectivePrefix.ifPresent(p -> builder.addField("Command Prefix", p, true));
-						builder.addField("Command Help", effectivePrefix.map(s -> "Type").orElse("Mention me and type")
-								+ " `" + effectivePrefix.orElse("") + "help` to get a list of commands.", true);
-						info.getSupportMessage().ifPresent(s -> builder.addField("Support", s, false));
-						info.getBotName().ifPresent(n -> builder.addField("Bot Name", n, true));
-						info.getVersion().ifPresent(v -> builder.addField("Bot Version", v, true));
-						if (info.isAllowInvite()) {
-							builder.addField("Server Invite",
-									"[Link](" + jda.asBot().getInviteUrl(info.getInvitePermissions()) + ")", true);
-						}
-						builder.addField("Technologies",
-								info.getTechnologies().stream().collect(Collectors.joining("\n")), false);
-						for (String group : info.getCredits().keySet()) {
-							builder.addField(group,
-									info.getCredits().get(group).stream().collect(Collectors.joining("\n")), false);
-						}
-
-						event.getChannel().sendMessage(builder.build()).complete();
-					}
-				}));
-
-		commands.put("help",
-				new CommandDefinition("help", false, "Lists the commands available for this bot.", new NoArgHandler() {
-					@Override
-					public void handleCommand(MessageReceivedEvent event) {
-						boolean showAdmin = event.getChannelType() != ChannelType.PRIVATE
-								&& event.getMember().hasPermission(Permission.ADMINISTRATOR);
-						List<String> helps = commands.values().stream()
-								.filter(c -> c.getHelp().isPresent() && (!c.isAdminOnly() || showAdmin))
-								.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
-								.map(c -> "```" + commandPrefix.orElse("") + c.getName()
-										+ (c.isAdminOnly() ? " (ADMIN ONLY)" : "") + "```" + c.getHelp().get())
-								.collect(Collectors.toList());
-						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
-						if (!event.isFromType(ChannelType.PRIVATE)) {
-							event.getChannel().sendMessage("I have sent you a message, "
-									+ event.getAuthor().getAsMention() + "! :slight_smile:").complete();
-						}
-					}
-				}));
-
-		commands.put("prefix",
-				new CommandDefinition("prefix", false, "Shows the prefix used by this bot.", new NoArgHandler() {
-					@Override
-					public void handleCommand(MessageReceivedEvent event) {
-						if (event.getChannelType() == ChannelType.PRIVATE && !commandPrefix.isPresent()) {
-							event.getChannel()
-									.sendMessage(
-											"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:")
-									.complete();
-							return;
-						}
-
-						Optional<String> effectivePrefix = getEffectivePrefix(event);
-
-						if (effectivePrefix.isPresent()) {
-							event.getChannel().sendMessage("```Prefix: " + effectivePrefix.get() + "```").complete();
-						} else {
-							event.getChannel().sendMessage("No prefix has been set for this server! Type "
-									+ jda.getSelfUser().getAsMention() + " before the command instead. :slight_smile:")
-									.complete();
-						}
-					}
-				}));
-
-		commands.put("setprefix",
-				new CommandDefinition("setPrefix", true, "Change the prefix used by this bot.", new CommandHandler() {
-					@Override
-					public void handleCommand(MessageReceivedEvent event, String[] args) {
-						JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
-						if (args.length != 1) {
-							event.getChannel()
-									.sendMessage("Specify a prefix to be used. The prefix cannot include any spaces.")
-									.complete();
-						}
-						String prefix = args[0].trim();
-						guildJson.put("prefix", prefix);
-						GuildSettings.save(event.getGuild().getId(), guildJson);
-						event.getChannel().sendMessage("Prefix has been changed to `" + prefix + "`").complete();
-					}
-				}));
-
-		if (configJson.has("simple")) {
-			JSONObject secretJson = configJson.getJSONObject("simple");
-			secretJson.keySet().forEach(k -> {
-				String response = secretJson.getString(k);
-				commands.put(k, new CommandDefinition(k, (SimpleResponse) (e -> response)));
-			});
-		}
 
 		exceptionHandler = (command, event, e) -> {
 			e.printStackTrace();
@@ -192,6 +97,111 @@ public class DiscordBot extends AbstractIdleService {
 		return jda;
 	}
 
+	void initialize() {
+		if (!selfBot) {
+			commands.put("info",
+					new CommandDefinition("info", false, "Shows information about this bot.", new NoArgHandler() {
+						@Override
+						public void handleCommand(MessageReceivedEvent event) {
+							EmbedBuilder builder = new EmbedBuilder();
+							Optional<String> effectivePrefix = getEffectivePrefix(event);
+							effectivePrefix.ifPresent(p -> builder.addField("Command Prefix", p, true));
+							builder.addField(
+									"Command Help", effectivePrefix.map(s -> "Type").orElse("Mention me and type")
+											+ " `" + effectivePrefix.orElse("") + "help` to get a list of commands.",
+									true);
+							info.getSupportMessage().ifPresent(s -> builder.addField("Support", s, false));
+							info.getBotName().ifPresent(n -> builder.addField("Bot Name", n, true));
+							info.getVersion().ifPresent(v -> builder.addField("Bot Version", v, true));
+							if (info.isAllowInvite()) {
+								builder.addField("Server Invite",
+										"[Link](" + jda.asBot().getInviteUrl(info.getInvitePermissions()) + ")", true);
+							}
+							builder.addField("Technologies",
+									info.getTechnologies().stream().collect(Collectors.joining("\n")), false);
+							for (String group : info.getCredits().keySet()) {
+								builder.addField(group,
+										info.getCredits().get(group).stream().collect(Collectors.joining("\n")), false);
+							}
+
+							event.getChannel().sendMessage(builder.build()).complete();
+						}
+					}));
+
+			commands.put("help", new CommandDefinition("help", false, "Lists the commands available for this bot.",
+					new NoArgHandler() {
+						@Override
+						public void handleCommand(MessageReceivedEvent event) {
+							boolean showAdmin = event.getChannelType() != ChannelType.PRIVATE
+									&& event.getMember().hasPermission(Permission.ADMINISTRATOR);
+							List<String> helps = commands.values().stream()
+									.filter(c -> c.getHelp().isPresent() && (!c.isAdminOnly() || showAdmin))
+									.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
+									.map(c -> "```" + commandPrefix.orElse("") + c.getName()
+											+ (c.isAdminOnly() ? " (ADMIN ONLY)" : "") + "```" + c.getHelp().get())
+									.collect(Collectors.toList());
+							DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
+							if (!event.isFromType(ChannelType.PRIVATE)) {
+								event.getChannel().sendMessage("I have sent you a message, "
+										+ event.getAuthor().getAsMention() + "! :slight_smile:").complete();
+							}
+						}
+					}));
+
+			commands.put("prefix",
+					new CommandDefinition("prefix", false, "Shows the prefix used by this bot.", new NoArgHandler() {
+						@Override
+						public void handleCommand(MessageReceivedEvent event) {
+							if (event.getChannelType() == ChannelType.PRIVATE && !commandPrefix.isPresent()) {
+								event.getChannel().sendMessage(
+										"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:")
+										.complete();
+								return;
+							}
+
+							Optional<String> effectivePrefix = getEffectivePrefix(event);
+
+							if (effectivePrefix.isPresent()) {
+								event.getChannel().sendMessage("```Prefix: " + effectivePrefix.get() + "```")
+										.complete();
+							} else {
+								event.getChannel()
+										.sendMessage("No prefix has been set for this server! Type "
+												+ jda.getSelfUser().getAsMention()
+												+ " before the command instead. :slight_smile:")
+										.complete();
+							}
+						}
+					}));
+
+			commands.put("setprefix", new CommandDefinition("setPrefix", true, "Change the prefix used by this bot.",
+					new CommandHandler() {
+						@Override
+						public void handleCommand(MessageReceivedEvent event, String[] args) {
+							JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
+							if (args.length != 1) {
+								event.getChannel()
+										.sendMessage(
+												"Specify a prefix to be used. The prefix cannot include any spaces.")
+										.complete();
+							}
+							String prefix = args[0].trim();
+							guildJson.put("prefix", prefix);
+							GuildSettings.save(event.getGuild().getId(), guildJson);
+							event.getChannel().sendMessage("Prefix has been changed to `" + prefix + "`").complete();
+						}
+					}));
+		}
+
+		if (configJson.has("simple")) {
+			JSONObject secretJson = configJson.getJSONObject("simple");
+			secretJson.keySet().forEach(k -> {
+				String response = secretJson.getString(k);
+				commands.put(k, new CommandDefinition(k, (SimpleResponse) (e -> response)));
+			});
+		}
+	}
+
 	private JSONObject loadConfig() {
 		try (Scanner scanner = new Scanner(new FileInputStream("config.json"), "UTF-8")) {
 			scanner.useDelimiter("\\A");
@@ -222,6 +232,10 @@ public class DiscordBot extends AbstractIdleService {
 		this.reactionWatcher = reactionWatcher;
 	}
 
+	public void setSelfBot(boolean selfBot) {
+		this.selfBot = selfBot;
+	}
+
 	public void setTextWatcher(Optional<TextWatcher> textWatcher) {
 		this.textWatcher = textWatcher;
 	}
@@ -241,7 +255,7 @@ public class DiscordBot extends AbstractIdleService {
 			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
 		}
 
-		jda = new JDABuilder(AccountType.BOT)//
+		jda = new JDABuilder(selfBot ? AccountType.CLIENT : AccountType.BOT)//
 				.setToken(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//
 				.addEventListener(new ListenerAdapter() {
@@ -297,8 +311,11 @@ public class DiscordBot extends AbstractIdleService {
 							rawContent = rawContent.substring(effectivePrefix.get().length()).trim();
 						}
 
+						boolean isFromMe = event.getJDA().getSelfUser().equals(event.getAuthor());
+
 						if (!event.getAuthor().isBot()
-								&& (isPrivateChannel || startsWithMentionMe || startsWithCommandPrefix)) {
+								&& (isPrivateChannel || startsWithMentionMe || startsWithCommandPrefix)
+								&& (!selfBot || isFromMe)) {
 							String[] split = rawContent.split("\\s+");
 							if (split.length > 0) {
 								String command = split[0];

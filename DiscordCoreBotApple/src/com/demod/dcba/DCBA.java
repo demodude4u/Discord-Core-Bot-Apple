@@ -37,6 +37,8 @@ public final class DCBA {
 
 		Builder ignorePrivateChannels();
 
+		Builder selfBot();
+
 		InfoBuilder setInfo(String botName);
 
 		Builder withCommandPrefix(String commandPrefix);
@@ -92,6 +94,12 @@ public final class DCBA {
 		@Override
 		public Builder ignorePrivateChannels() {
 			bot.setIgnorePrivateChannels(true);
+			return this;
+		}
+
+		@Override
+		public Builder selfBot() {
+			bot.setSelfBot(true);
 			return this;
 		}
 
