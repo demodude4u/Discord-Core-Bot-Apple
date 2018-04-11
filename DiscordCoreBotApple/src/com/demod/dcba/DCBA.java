@@ -88,6 +88,7 @@ public final class DCBA {
 				bot.addCommand(command);
 				command = null;
 			}
+			bot.initialize();
 			return bot;
 		}
 
