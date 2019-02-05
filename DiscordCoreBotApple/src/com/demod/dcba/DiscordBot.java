@@ -235,7 +235,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	private Optional<String> getEffectivePrefix(MessageReceivedEvent event) {
 		Optional<String> effectivePrefix = commandPrefix;
-		if (event.getChannelType() != ChannelType.PRIVATE) {
+		if (event.getChannelType() == ChannelType.TEXT) {
 			JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
 			if (guildJson.has(COMMAND_PREFIX)) {
 				effectivePrefix = Optional.of(guildJson.getString(COMMAND_PREFIX));
@@ -366,7 +366,7 @@ public class DiscordBot extends AbstractIdleService {
 
 						Message message = event.getMessage();
 						MessageChannel channel = message.getChannel();
-						String rawContent = message.getRawContent().trim();
+						String rawContent = message.getContentRaw().trim();
 
 						String mentionMe = event.getJDA().getSelfUser().getAsMention();
 
