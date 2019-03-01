@@ -35,7 +35,9 @@ import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.PrivateChannel;
+import net.dv8tion.jda.core.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.core.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.core.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.core.events.message.react.MessageReactionRemoveEvent;
@@ -338,6 +340,13 @@ public class DiscordBot extends AbstractIdleService {
 				.setEnableShutdownHook(false)//
 				.addEventListener(new ListenerAdapter() {
 					@Override
+					public void onMessageDelete(MessageDeleteEvent event) {
+						if (textWatcher.isPresent()) {
+							textWatcher.get().deletedMessage(event);
+						}
+					}
+
+					@Override
 					public void onMessageReactionAdd(MessageReactionAddEvent event) {
 						if (reactionWatcher.isPresent()) {
 							reactionWatcher.get().seenReaction(event);
@@ -428,6 +437,13 @@ public class DiscordBot extends AbstractIdleService {
 									}
 								}
 							}
+						}
+					}
+
+					@Override
+					public void onMessageUpdate(MessageUpdateEvent event) {
+						if (textWatcher.isPresent()) {
+							textWatcher.get().editedMessage(event);
 						}
 					}
 				}).buildBlocking();
