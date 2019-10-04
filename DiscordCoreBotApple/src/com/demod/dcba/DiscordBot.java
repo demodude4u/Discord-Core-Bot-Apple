@@ -93,7 +93,7 @@ public class DiscordBot extends AbstractIdleService {
 		return new CommandDefinition(COMMAND_BOTSTATS, true, "Display statistics about the usage of this bot.",
 				new NoArgHandler() {
 					@Override
-					public void handleCommand(MessageReceivedEvent event) throws Exception {
+					public void handleCommand(MessageReceivedEvent event) {
 						JDA jda = event.getJDA();
 						List<Guild> guilds = jda.getGuilds();
 
@@ -321,7 +321,7 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	@Override
-	protected void shutDown() throws Exception {
+	protected void shutDown() {
 		jda.shutdown();
 	}
 
