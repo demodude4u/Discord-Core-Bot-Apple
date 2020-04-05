@@ -6,11 +6,13 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -120,13 +122,17 @@ public class DiscordBot extends AbstractIdleService {
 				new NoArgHandler() {
 					@Override
 					public void handleCommand(MessageReceivedEvent event) {
+						Set<CommandDefinition> visitedCommands = new HashSet<>();
+
 						boolean showAdmin = event.getChannelType() != ChannelType.PRIVATE
 								&& event.getMember().hasPermission(Permission.ADMINISTRATOR);
 						List<String> helps = commands.values().stream()
-								.filter(c -> c.getHelp().isPresent() && (!c.isAdminOnly() || showAdmin))
+								.filter(c -> c.getHelp().isPresent() && (!c.isAdminOnly() || showAdmin)
+										&& visitedCommands.add(c))
 								.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
-								.map(c -> "```" + commandPrefix.orElse("") + c.getName()
-										+ (c.isAdminOnly() ? " (ADMIN ONLY)" : "") + "```" + c.getHelp().get())
+								.map(c -> "> ``" + commandPrefix.orElse("") + c.getName() + "``"
+										+ c.getAliasesString(commandPrefix.orElse(""))
+										+ (c.isAdminOnly() ? " (ADMIN ONLY)" : "") + "\n" + c.getHelp().get() + "\n")
 								.collect(Collectors.toList());
 						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
 						if (!event.isFromType(ChannelType.PRIVATE)) {

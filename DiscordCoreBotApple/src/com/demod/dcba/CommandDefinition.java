@@ -25,6 +25,17 @@ public class CommandDefinition {
 		return aliases;
 	}
 
+	public String getAliasesString(String commandPrefix) {
+		String ret = "";
+		if (aliases.isPresent()) {
+			for (String alias : aliases.get()) {
+				ret += ", ``" + commandPrefix + alias + "``";
+			}
+		}
+
+		return ret;
+	}
+
 	public CommandHandler getHandler() {
 		return handler;
 	}
