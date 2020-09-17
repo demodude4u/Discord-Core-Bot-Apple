@@ -1,8 +1,10 @@
 package com.demod.dcba;
 
 import java.util.Optional;
+import java.util.function.Function;
 
-import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 
 public final class DCBA {
 
@@ -37,11 +39,11 @@ public final class DCBA {
 
 		Builder ignorePrivateChannels();
 
-		Builder selfBot();
-
 		InfoBuilder setInfo(String botName);
 
 		Builder withCommandPrefix(String commandPrefix);
+
+		Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup);
 
 		Builder withExceptionHandler(ExceptionHandler handler);
 	}
@@ -99,12 +101,6 @@ public final class DCBA {
 		}
 
 		@Override
-		public Builder selfBot() {
-			bot.setSelfBot(true);
-			return this;
-		}
-
-		@Override
 		public InfoBuilder setInfo(String botName) {
 			bot.getInfo().setBotName(Optional.of(botName));
 			return this;
@@ -125,6 +121,12 @@ public final class DCBA {
 		@Override
 		public InfoBuilder withCredits(String group, String... names) {
 			bot.getInfo().addCredits(group, names);
+			return this;
+		}
+
+		@Override
+		public Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup) {
+			bot.setCustomSetup(customSetup);
 			return this;
 		}
 

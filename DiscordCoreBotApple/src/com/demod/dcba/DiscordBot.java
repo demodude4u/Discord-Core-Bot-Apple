@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
@@ -27,23 +28,22 @@ import com.demod.dcba.CommandHandler.SimpleResponse;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Uninterruptibles;
 
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.ChannelType;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.PrivateChannel;
-import net.dv8tion.jda.core.events.message.MessageDeleteEvent;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
-import net.dv8tion.jda.core.events.message.react.MessageReactionAddEvent;
-import net.dv8tion.jda.core.events.message.react.MessageReactionRemoveAllEvent;
-import net.dv8tion.jda.core.events.message.react.MessageReactionRemoveEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.PrivateChannel;
+import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class DiscordBot extends AbstractIdleService {
 
@@ -62,7 +62,6 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<TextWatcher> textWatcher = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 	private boolean ignorePrivateChannels = false;
-	private boolean selfBot = false;
 
 	private ExceptionHandler exceptionHandler;
 
@@ -71,6 +70,8 @@ public class DiscordBot extends AbstractIdleService {
 	private JDA jda;
 
 	private final LocalDateTime botStarted = LocalDateTime.now();
+
+	private Function<JDABuilder, JDABuilder> customSetup = null;
 
 	DiscordBot() {
 		configJson = loadConfig();
@@ -102,7 +103,7 @@ public class DiscordBot extends AbstractIdleService {
 						int guildCount = guilds.size();
 						int memberCount = guilds.stream().mapToInt(g -> g.getMembers().size()).sum();
 						String uptimeFormatted = getDurationFormatted(botStarted, LocalDateTime.now());
-						long ping = jda.getPing();
+						long ping = jda.getGatewayPing();
 						long responseTotal = jda.getResponseTotal();
 
 						EmbedBuilder builder = new EmbedBuilder();
@@ -156,8 +157,8 @@ public class DiscordBot extends AbstractIdleService {
 				info.getBotName().ifPresent(n -> builder.addField("Bot Name", n, true));
 				info.getVersion().ifPresent(v -> builder.addField("Bot Version", v, true));
 				if (info.isAllowInvite()) {
-					builder.addField("Server Invite",
-							"[Link](" + jda.asBot().getInviteUrl(info.getInvitePermissions()) + ")", true);
+					builder.addField("Server Invite", "[Link](" + jda.getInviteUrl(info.getInvitePermissions()) + ")",
+							true);
 				}
 				builder.addField("Technologies", info.getTechnologies().stream().collect(Collectors.joining("\n")),
 						false);
@@ -261,22 +262,20 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	void initialize() {
-		if (!selfBot) {
-			if (!commands.containsKey(COMMAND_INFO)) {
-				commands.put(COMMAND_INFO, createCommandInfo());
-			}
-			if (!commands.containsKey(COMMMAND_HELP)) {
-				commands.put(COMMMAND_HELP, createCommandHelp());
-			}
-			if (!commands.containsKey(COMMAND_PREFIX)) {
-				commands.put(COMMAND_PREFIX, createCommandPrefix());
-			}
-			if (!commands.containsKey(COMMAND_SETPREFIX)) {
-				commands.put(COMMAND_SETPREFIX, createCommandSetPrefix());
-			}
-			if (!commands.containsKey(COMMAND_BOTSTATS)) {
-				commands.put(COMMAND_BOTSTATS, createCommandBotStats());
-			}
+		if (!commands.containsKey(COMMAND_INFO)) {
+			commands.put(COMMAND_INFO, createCommandInfo());
+		}
+		if (!commands.containsKey(COMMMAND_HELP)) {
+			commands.put(COMMMAND_HELP, createCommandHelp());
+		}
+		if (!commands.containsKey(COMMAND_PREFIX)) {
+			commands.put(COMMAND_PREFIX, createCommandPrefix());
+		}
+		if (!commands.containsKey(COMMAND_SETPREFIX)) {
+			commands.put(COMMAND_SETPREFIX, createCommandSetPrefix());
+		}
+		if (!commands.containsKey(COMMAND_BOTSTATS)) {
+			commands.put(COMMAND_BOTSTATS, createCommandBotStats());
 		}
 
 		if (configJson.has("simple")) {
@@ -306,6 +305,10 @@ public class DiscordBot extends AbstractIdleService {
 		this.commandPrefix = commandPrefix;
 	}
 
+	public void setCustomSetup(Function<JDABuilder, JDABuilder> customSetup) {
+		this.customSetup = customSetup;
+	}
+
 	public void setExceptionHandler(ExceptionHandler exceptionHandler) {
 		this.exceptionHandler = exceptionHandler;
 	}
@@ -316,10 +319,6 @@ public class DiscordBot extends AbstractIdleService {
 
 	public void setReactionWatcher(Optional<ReactionWatcher> reactionWatcher) {
 		this.reactionWatcher = reactionWatcher;
-	}
-
-	public void setSelfBot(boolean selfBot) {
-		this.selfBot = selfBot;
 	}
 
 	public void setTextWatcher(Optional<TextWatcher> textWatcher) {
@@ -341,10 +340,9 @@ public class DiscordBot extends AbstractIdleService {
 			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
 		}
 
-		jda = new JDABuilder(selfBot ? AccountType.CLIENT : AccountType.BOT)//
-				.setToken(configJson.getString("bot_token"))//
+		JDABuilder builder = JDABuilder.createDefault(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//
-				.addEventListener(new ListenerAdapter() {
+				.addEventListeners(new ListenerAdapter() {
 					@Override
 					public void onMessageDelete(MessageDeleteEvent event) {
 						if (textWatcher.isPresent()) {
@@ -404,11 +402,8 @@ public class DiscordBot extends AbstractIdleService {
 							rawContent = rawContent.substring(effectivePrefix.get().length()).trim();
 						}
 
-						boolean isFromMe = event.getJDA().getSelfUser().equals(event.getAuthor());
-
 						if (!event.getAuthor().isBot()
-								&& (isPrivateChannel || startsWithMentionMe || startsWithCommandPrefix)
-								&& (!selfBot || isFromMe)) {
+								&& (isPrivateChannel || startsWithMentionMe || startsWithCommandPrefix)) {
 							String[] split = rawContent.split("\\s+");
 							if (split.length > 0) {
 								String command = split[0];
@@ -452,6 +447,10 @@ public class DiscordBot extends AbstractIdleService {
 							textWatcher.get().editedMessage(event);
 						}
 					}
-				}).buildBlocking();
+				});
+		if (customSetup != null) {
+			builder = customSetup.apply(builder);
+		}
+		jda = builder.build().awaitReady();
 	}
 }

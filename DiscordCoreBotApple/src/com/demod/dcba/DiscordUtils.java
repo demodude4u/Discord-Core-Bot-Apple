@@ -2,8 +2,8 @@ package com.demod.dcba;
 
 import java.util.List;
 
-import net.dv8tion.jda.core.MessageBuilder;
-import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.MessageChannel;
 
 public final class DiscordUtils {
 	public static void replyTo(MessageChannel channel, List<String> responseSegments) {
