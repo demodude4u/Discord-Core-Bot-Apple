@@ -433,8 +433,9 @@ public class DiscordBot extends AbstractIdleService {
 											commandDefinition.getHandler().handleCommand(event, args);
 										} catch (Exception e) {
 											exceptionHandler.handleException(commandDefinition, event, e);
+										} finally {
+											keepTyping.set(false);
 										}
-										keepTyping.set(false);
 									}
 								}
 							}
