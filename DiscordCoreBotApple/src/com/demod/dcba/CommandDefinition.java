@@ -5,20 +5,24 @@ import java.util.Optional;
 public class CommandDefinition {
 	private final String name;
 	private final CommandHandler handler;
+	private final CommandOptionDefinition[] options;
 	private Optional<String[]> aliases = Optional.empty();
 	private Optional<String> help = Optional.empty();
 	private boolean adminOnly = false;
 
-	public CommandDefinition(String name, boolean adminOnly, String help, CommandHandler handler) {
+	public CommandDefinition(String name, boolean adminOnly, String help, CommandHandler handler,
+			CommandOptionDefinition... options) {
 		this.name = name;
 		this.handler = handler;
+		this.options = options;
 		this.help = Optional.of(help);
 		this.adminOnly = adminOnly;
 	}
 
-	public CommandDefinition(String name, CommandHandler handler) {
+	public CommandDefinition(String name, CommandHandler handler, CommandOptionDefinition... options) {
 		this.name = name;
 		this.handler = handler;
+		this.options = options;
 	}
 
 	public Optional<String[]> getAliases() {
@@ -46,6 +50,10 @@ public class CommandDefinition {
 
 	public String getName() {
 		return name;
+	}
+
+	public CommandOptionDefinition[] getOptions() {
+		return options;
 	}
 
 	public boolean isAdminOnly() {

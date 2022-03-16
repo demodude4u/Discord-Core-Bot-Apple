@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.demod.dcba</groupId>
@@ -20,16 +21,16 @@
 	</build>
 	<repositories>
 		<repository>
-			<id>jcenter</id>
-			<name>jcenter-bintray</name>
-			<url>https://jcenter.bintray.com</url>
+			<id>dv8tion</id>
+			<name>m2-dv8tion</name>
+			<url>https://m2.dv8tion.net/releases</url>
 		</repository>
 	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>net.dv8tion</groupId>
 			<artifactId>JDA</artifactId>
-			<version>4.2.0_168</version>
+			<version>4.4.0_350</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>

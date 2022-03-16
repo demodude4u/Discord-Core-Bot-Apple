@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.demod.dcba.DCBA;
 import com.demod.dcba.DiscordBot;
 
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class HelloExample {
@@ -22,8 +23,9 @@ public class HelloExample {
 				.withHelp("The bot will say hi to you, and mention you as an admin!")//
 				//
 				.addTextWatcher((MessageReceivedEvent event) -> System.out
-						.println(event.getGuild().getName() + " #" + event.getChannel().getName() + " "
-								+ event.getAuthor().getName() + " -> " + event.getMessage().getContentDisplay()))//
+						.println((event.getChannelType() == ChannelType.TEXT ? event.getGuild().getName() : "???")
+								+ " #" + event.getChannel().getName() + " " + event.getAuthor().getName() + " -> "
+								+ event.getMessage().getContentDisplay()))//
 				//
 				.create();
 

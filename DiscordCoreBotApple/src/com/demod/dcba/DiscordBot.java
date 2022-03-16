@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -23,7 +24,6 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.demod.dcba.CommandHandler.NoArgHandler;
 import com.demod.dcba.CommandHandler.SimpleResponse;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -37,6 +37,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.PrivateChannel;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
@@ -44,6 +45,10 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 
 public class DiscordBot extends AbstractIdleService {
 
@@ -94,9 +99,9 @@ public class DiscordBot extends AbstractIdleService {
 
 	private CommandDefinition createCommandBotStats() {
 		return new CommandDefinition(COMMAND_BOTSTATS, true, "Display statistics about the usage of this bot.",
-				new NoArgHandler() {
+				new CommandHandler() {
 					@Override
-					public void handleCommand(MessageReceivedEvent event) {
+					public void handleCommand(CommandEvent event) throws Exception {
 						JDA jda = event.getJDA();
 						List<Guild> guilds = jda.getGuilds();
 
@@ -113,16 +118,16 @@ public class DiscordBot extends AbstractIdleService {
 						builder.addField("Ping to Discord", ping + " ms", true);
 						builder.addField("Responses to Discord", responseTotal + " responses", true);
 
-						event.getChannel().sendMessage(builder.build()).complete();
+						event.reply(builder.build());
 					}
 				});
 	}
 
 	private CommandDefinition createCommandHelp() {
 		return new CommandDefinition(COMMMAND_HELP, false, "Lists the commands available for this bot.",
-				new NoArgHandler() {
+				new CommandHandler() {
 					@Override
-					public void handleCommand(MessageReceivedEvent event) {
+					public void handleCommand(CommandEvent event) throws Exception {
 						Set<CommandDefinition> visitedCommands = new HashSet<>();
 
 						boolean showAdmin = event.getChannelType() != ChannelType.PRIVATE
@@ -137,17 +142,17 @@ public class DiscordBot extends AbstractIdleService {
 								.collect(Collectors.toList());
 						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
 						if (!event.isFromType(ChannelType.PRIVATE)) {
-							event.getChannel().sendMessage("I have sent you a message, "
-									+ event.getAuthor().getAsMention() + "! :slight_smile:").complete();
+							event.reply("I have sent you a message, " + event.getAuthor().getAsMention()
+									+ "! :slight_smile:");
 						}
 					}
 				});
 	}
 
 	private CommandDefinition createCommandInfo() {
-		return new CommandDefinition(COMMAND_INFO, false, "Shows information about this bot.", new NoArgHandler() {
+		return new CommandDefinition(COMMAND_INFO, false, "Shows information about this bot.", new CommandHandler() {
 			@Override
-			public void handleCommand(MessageReceivedEvent event) {
+			public void handleCommand(CommandEvent event) throws Exception {
 				EmbedBuilder builder = new EmbedBuilder();
 				Optional<String> effectivePrefix = getEffectivePrefix(event);
 				effectivePrefix.ifPresent(p -> builder.addField("Command Prefix", p, true));
@@ -167,15 +172,15 @@ public class DiscordBot extends AbstractIdleService {
 							false);
 				}
 
-				event.getChannel().sendMessage(builder.build()).complete();
+				event.reply(builder.build());
 			}
 		});
 	}
 
 	private CommandDefinition createCommandPrefix() {
-		return new CommandDefinition(COMMAND_PREFIX, false, "Shows the prefix used by this bot.", new NoArgHandler() {
+		return new CommandDefinition(COMMAND_PREFIX, false, "Shows the prefix used by this bot.", new CommandHandler() {
 			@Override
-			public void handleCommand(MessageReceivedEvent event) {
+			public void handleCommand(CommandEvent event) throws Exception {
 				if (event.getChannelType() == ChannelType.PRIVATE && !commandPrefix.isPresent()) {
 					event.getChannel().sendMessage(
 							"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:")
@@ -186,12 +191,10 @@ public class DiscordBot extends AbstractIdleService {
 				Optional<String> effectivePrefix = getEffectivePrefix(event);
 
 				if (effectivePrefix.isPresent()) {
-					event.getChannel().sendMessage("```Prefix: " + effectivePrefix.get() + "```").complete();
+					event.reply("```Prefix: " + effectivePrefix.get() + "```");
 				} else {
-					event.getChannel()
-							.sendMessage("No prefix has been set for this server! Type "
-									+ jda.getSelfUser().getAsMention() + " before the command instead. :slight_smile:")
-							.complete();
+					event.reply("No prefix has been set for this server! Type " + jda.getSelfUser().getAsMention()
+							+ " before the command instead. :slight_smile:");
 				}
 			}
 		});
@@ -200,18 +203,14 @@ public class DiscordBot extends AbstractIdleService {
 	private CommandDefinition createCommandSetPrefix() {
 		return new CommandDefinition("setPrefix", true, "Change the prefix used by this bot.", new CommandHandler() {
 			@Override
-			public void handleCommand(MessageReceivedEvent event, String[] args) {
+			public void handleCommand(CommandEvent event) throws Exception {
 				JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
-				if (args.length != 1) {
-					event.getChannel().sendMessage("Specify a prefix to be used. The prefix cannot include any spaces.")
-							.complete();
-				}
-				String prefix = args[0].trim();
+				String prefix = event.getOption("prefix");
 				guildJson.put(COMMAND_PREFIX, prefix);
 				GuildSettings.save(event.getGuild().getId(), guildJson);
-				event.getChannel().sendMessage("Prefix has been changed to `" + prefix + "`").complete();
+				event.reply("Prefix has been changed to `" + prefix + "`");
 			}
-		});
+		}, new CommandOptionDefinition(OptionType.STRING, "prefix", "Prefix to be changed to.", true));
 	}
 
 	public Optional<String> getCommandPrefix() {
@@ -240,6 +239,17 @@ public class DiscordBot extends AbstractIdleService {
 		}
 
 		return result.stream().collect(Collectors.joining(", "));
+	}
+
+	private Optional<String> getEffectivePrefix(CommandEvent event) {
+		Optional<String> effectivePrefix = commandPrefix;
+		if (event.getChannelType() == ChannelType.TEXT) {
+			JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
+			if (guildJson.has(COMMAND_PREFIX)) {
+				effectivePrefix = Optional.of(guildJson.getString(COMMAND_PREFIX));
+			}
+		}
+		return effectivePrefix;
 	}
 
 	private Optional<String> getEffectivePrefix(MessageReceivedEvent event) {
@@ -334,7 +344,7 @@ public class DiscordBot extends AbstractIdleService {
 	protected void startUp() throws Exception {
 		info.addTechnology("[DCBA](https://github.com/demodude4u/Discord-Core-Bot-Apple)", Optional.empty(),
 				"Discord Core Bot Apple");
-		info.addTechnology("[JDA](https://github.com/DV8FromTheWorld/JDA)", Optional.of("3.0"), "Java Discord API");
+		info.addTechnology("[JDA](https://github.com/DV8FromTheWorld/JDA)", Optional.of("4.4"), "Java Discord API");
 
 		if (configJson.has("command_prefix")) {
 			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
@@ -429,10 +439,19 @@ public class DiscordBot extends AbstractIdleService {
 												Uninterruptibles.sleepUninterruptibly(5, TimeUnit.SECONDS);
 											}
 										});
+										Map<String, String> options = new LinkedHashMap<>();
+										for (int i = 0; i < commandDefinition.getOptions().length; i++) {
+											CommandOptionDefinition optionDefinition = commandDefinition
+													.getOptions()[i];
+											if (i < args.length) {
+												options.put(optionDefinition.getName(), args[i]);
+											}
+										}
+										MessageCommandEvent commandEvent = new MessageCommandEvent(event, options);
 										try {
-											commandDefinition.getHandler().handleCommand(event, args);
+											commandDefinition.getHandler().handleCommand(commandEvent);
 										} catch (Exception e) {
-											exceptionHandler.handleException(commandDefinition, event, e);
+											exceptionHandler.handleException(commandDefinition, commandEvent, e);
 										} finally {
 											keepTyping.set(false);
 										}
@@ -448,10 +467,46 @@ public class DiscordBot extends AbstractIdleService {
 							textWatcher.get().editedMessage(event);
 						}
 					}
+
+					@Override
+					public void onSlashCommand(SlashCommandEvent event) {
+						InteractionHook hook = event.deferReply(false).complete();
+
+						CommandDefinition commandDefinition = commands.get(event.getName());
+						SlashInteractionCommandEvent commandEvent = new SlashInteractionCommandEvent(event, hook);
+
+						try {
+							commandDefinition.getHandler().handleCommand(commandEvent);
+						} catch (Exception e) {
+							exceptionHandler.handleException(commandDefinition, commandEvent, e);
+						} finally {
+							if (!commandEvent.hasReplied()) {
+								hook.deleteOriginal().complete();
+							}
+						}
+					}
 				});
 		if (customSetup != null) {
 			builder = customSetup.apply(builder);
 		}
 		jda = builder.build().awaitReady();
+
+		if (configJson.has("debug_guild_commands")) {
+			String guildId = configJson.getString("debug_guild_commands");
+			Guild guild = jda.getGuildById(guildId);
+			CommandListUpdateAction updateCommands = guild.updateCommands();
+
+			for (Entry<String, CommandDefinition> entry : commands.entrySet()) {
+				CommandData commandData = new CommandData(entry.getKey(), entry.getValue().getHelp().orElse(""))
+						.setDefaultEnabled(!entry.getValue().isAdminOnly());
+				for (CommandOptionDefinition option : entry.getValue().getOptions()) {
+					commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
+							option.isRequired());
+				}
+				updateCommands = updateCommands.addCommands(commandData);
+			}
+
+			updateCommands.queue();
+		}
 	}
 }
