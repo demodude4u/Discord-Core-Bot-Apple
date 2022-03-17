@@ -1,28 +1,47 @@
 package com.demod.dcba;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 
 public class CommandDefinition {
+	public enum CommandRestriction {
+		ADMIN_ONLY, SLASH_COMMANDS_ONLY, MESSAGE_COMMANDS_ONLY, PRIVATE_CHANNEL_ONLY, GUILD_CHANNEL_ONLY
+	}
+
 	private final String name;
 	private final CommandHandler handler;
-	private final CommandOptionDefinition[] options;
+	private final List<CommandOptionDefinition> options = new ArrayList<>();
 	private Optional<String[]> aliases = Optional.empty();
 	private Optional<String> help = Optional.empty();
-	private boolean adminOnly = false;
+	private final EnumSet<CommandRestriction> restrictions = EnumSet.noneOf(CommandRestriction.class);
 
 	public CommandDefinition(String name, boolean adminOnly, String help, CommandHandler handler,
 			CommandOptionDefinition... options) {
 		this.name = name;
 		this.handler = handler;
-		this.options = options;
+		Collections.addAll(this.options, options);
 		this.help = Optional.of(help);
-		this.adminOnly = adminOnly;
+
+		if (adminOnly) {
+			setRestriction(CommandRestriction.ADMIN_ONLY);
+		}
 	}
 
 	public CommandDefinition(String name, CommandHandler handler, CommandOptionDefinition... options) {
 		this.name = name;
 		this.handler = handler;
-		this.options = options;
+		Collections.addAll(this.options, options);
+	}
+
+	public void addOption(CommandOptionDefinition option) {
+		options.add(option);
+	}
+
+	public void clearRestriction(CommandRestriction restriction) {
+		restrictions.remove(restriction);
 	}
 
 	public Optional<String[]> getAliases() {
@@ -52,16 +71,16 @@ public class CommandDefinition {
 		return name;
 	}
 
-	public CommandOptionDefinition[] getOptions() {
+	public List<CommandOptionDefinition> getOptions() {
 		return options;
 	}
 
-	public boolean isAdminOnly() {
-		return adminOnly;
+	public EnumSet<CommandRestriction> getRestrictions() {
+		return restrictions;
 	}
 
-	public void setAdminOnly(boolean adminOnly) {
-		this.adminOnly = adminOnly;
+	public boolean hasRestriction(CommandRestriction restriction) {
+		return restrictions.contains(restriction);
 	}
 
 	public void setAliases(Optional<String[]> aliases) {
@@ -70,5 +89,9 @@ public class CommandDefinition {
 
 	public void setHelp(Optional<String> help) {
 		this.help = help;
+	}
+
+	public void setRestriction(CommandRestriction restriction) {
+		restrictions.add(restriction);
 	}
 }

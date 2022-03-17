@@ -1,5 +1,7 @@
 package com.demod.dcba;
 
+import java.util.Optional;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
@@ -10,6 +12,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
 public class SlashInteractionCommandEvent extends CommandEvent {
 
@@ -56,8 +59,12 @@ public class SlashInteractionCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public String getOption(String name) {
+	public String getParam(String name) {
 		return event.getOption(name).getAsString();
+	}
+
+	public OptionMapping getParamMapping(String name) {
+		return event.getOption(name);
 	}
 
 	public boolean hasReplied() {
@@ -67,6 +74,15 @@ public class SlashInteractionCommandEvent extends CommandEvent {
 	@Override
 	public boolean isFromType(ChannelType type) {
 		return interaction.getChannel().getType() == type;
+	}
+
+	@Override
+	public Optional<String> optParam(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsString);
+	}
+
+	public Optional<OptionMapping> optParamMapping(String name) {
+		return Optional.ofNullable(event.getOption(name));
 	}
 
 	@Override

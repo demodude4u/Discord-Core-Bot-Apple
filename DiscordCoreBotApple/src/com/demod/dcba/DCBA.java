@@ -3,15 +3,27 @@ package com.demod.dcba;
 import java.util.Optional;
 import java.util.function.Function;
 
+import com.demod.dcba.CommandDefinition.CommandRestriction;
+import com.demod.dcba.CommandHandler.SimpleEmbedResponse;
+import com.demod.dcba.CommandHandler.SimpleEmbedSlashResponse;
+import com.demod.dcba.CommandHandler.SimpleResponse;
+import com.demod.dcba.CommandHandler.SimpleSlashResponse;
+import com.demod.dcba.CommandHandler.SlashCommandHandler;
+
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 
 public final class DCBA {
 
 	public static interface Builder {
 		CommandBuilder addCommand(String command, CommandHandler handler);
 
-		default CommandBuilder addCommand(String command, CommandHandler.SimpleResponse handler) {
+		default CommandBuilder addCommand(String command, SimpleEmbedResponse handler) {
+			return addCommand(command, (CommandHandler) handler);
+		}
+
+		default CommandBuilder addCommand(String command, SimpleResponse handler) {
 			return addCommand(command, (CommandHandler) handler);
 		}
 
@@ -19,6 +31,18 @@ public final class DCBA {
 
 		default Builder addReactionWatcher(ReactionWatcher.SimpleWatcher watcher) {
 			return addReactionWatcher((ReactionWatcher) watcher);
+		}
+
+		default CommandBuilder addSlashCommand(String command, SimpleEmbedSlashResponse handler) {
+			return addCommand(command, (CommandHandler) handler).slashCommandOnly();
+		}
+
+		default CommandBuilder addSlashCommand(String command, SimpleSlashResponse handler) {
+			return addCommand(command, (CommandHandler) handler).slashCommandOnly();
+		}
+
+		default CommandBuilder addSlashCommand(String command, SlashCommandHandler handler) {
+			return addCommand(command, handler).slashCommandOnly();
 		}
 
 		Builder addTextWatcher(TextWatcher watcher);
@@ -72,7 +96,7 @@ public final class DCBA {
 
 		@Override
 		public CommandBuilder adminOnly() {
-			command.setAdminOnly(true);
+			command.setRestriction(CommandRestriction.ADMIN_ONLY);
 			return this;
 		}
 
@@ -87,14 +111,42 @@ public final class DCBA {
 		}
 
 		@Override
+		public CommandBuilder guildChannelOnly() {
+			command.setRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+			command.clearRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
+			return this;
+		}
+
+		@Override
 		public Builder ignorePrivateChannels() {
 			bot.setIgnorePrivateChannels(true);
 			return this;
 		}
 
 		@Override
+		public CommandBuilder messageCommandOnly() {
+			command.setRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
+			command.clearRestriction(CommandRestriction.SLASH_COMMANDS_ONLY);
+			return this;
+		}
+
+		@Override
+		public CommandBuilder privateChannelOnly() {
+			command.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
+			command.clearRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+			return this;
+		}
+
+		@Override
 		public InfoBuilder setInfo(String botName) {
 			bot.getInfo().setBotName(Optional.of(botName));
+			return this;
+		}
+
+		@Override
+		public CommandBuilder slashCommandOnly() {
+			command.setRestriction(CommandRestriction.SLASH_COMMANDS_ONLY);
+			command.clearRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
 			return this;
 		}
 
@@ -142,6 +194,18 @@ public final class DCBA {
 		}
 
 		@Override
+		public CommandBuilder withOptionalParam(OptionType type, String name, String description) {
+			command.addOption(new CommandOptionDefinition(type, name, description, false));
+			return this;
+		}
+
+		@Override
+		public CommandBuilder withParam(OptionType type, String name, String description) {
+			command.addOption(new CommandOptionDefinition(type, name, description, true));
+			return this;
+		}
+
+		@Override
 		public InfoBuilder withSupport(String supportMessage) {
 			bot.getInfo().setSupport(Optional.of(supportMessage));
 			return this;
@@ -169,9 +233,21 @@ public final class DCBA {
 	public static interface CommandBuilder extends Builder {
 		CommandBuilder adminOnly();
 
+		CommandBuilder guildChannelOnly();
+
+		CommandBuilder messageCommandOnly();
+
+		CommandBuilder privateChannelOnly();
+
+		CommandBuilder slashCommandOnly();
+
 		CommandBuilder withAliases(String... aliases);
 
 		CommandBuilder withHelp(String description);
+
+		CommandBuilder withOptionalParam(OptionType type, String name, String description);
+
+		CommandBuilder withParam(OptionType type, String name, String description);
 	}
 
 	public static interface InfoBuilder extends Builder {

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.demod.dcba.CommandDefinition.CommandRestriction;
 import com.demod.dcba.CommandHandler.SimpleResponse;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -61,7 +62,9 @@ public class DiscordBot extends AbstractIdleService {
 	private final Map<String, CommandDefinition> commands = new LinkedHashMap<>();
 
 	private final InfoDefinition info = new InfoDefinition();
+
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
+	private final ExecutorService commandService = Executors.newSingleThreadExecutor();
 
 	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<TextWatcher> textWatcher = Optional.empty();
@@ -97,9 +100,28 @@ public class DiscordBot extends AbstractIdleService {
 		});
 	}
 
+	private void buildUpdateCommands(CommandListUpdateAction updateCommands) {
+
+		for (Entry<String, CommandDefinition> entry : commands.entrySet()) {
+			if (entry.getValue().hasRestriction(CommandRestriction.ADMIN_ONLY)) {
+				continue;// For now, no admin/permissioned commands, it gets complicated
+			}
+			if (entry.getValue().hasRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY)) {
+				continue;// For now, no admin/permissioned commands, it gets complicated
+			}
+			CommandData commandData = new CommandData(entry.getKey(), entry.getValue().getHelp().orElse(""));
+			for (CommandOptionDefinition option : entry.getValue().getOptions()) {
+				commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
+						option.isRequired());
+			}
+			updateCommands = updateCommands.addCommands(commandData);
+		}
+
+	}
+
 	private CommandDefinition createCommandBotStats() {
-		return new CommandDefinition(COMMAND_BOTSTATS, true, "Display statistics about the usage of this bot.",
-				new CommandHandler() {
+		CommandDefinition commandDefinition = new CommandDefinition(COMMAND_BOTSTATS, false,
+				"Display statistics about the usage of this bot.", new CommandHandler() {
 					@Override
 					public void handleCommand(CommandEvent event) throws Exception {
 						JDA jda = event.getJDA();
@@ -121,11 +143,14 @@ public class DiscordBot extends AbstractIdleService {
 						event.reply(builder.build());
 					}
 				});
+		commandDefinition.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
+		commandDefinition.setRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
+		return commandDefinition;
 	}
 
 	private CommandDefinition createCommandHelp() {
-		return new CommandDefinition(COMMMAND_HELP, false, "Lists the commands available for this bot.",
-				new CommandHandler() {
+		CommandDefinition commandDefinition = new CommandDefinition(COMMMAND_HELP, false,
+				"Lists the commands available for this bot.", new CommandHandler() {
 					@Override
 					public void handleCommand(CommandEvent event) throws Exception {
 						Set<CommandDefinition> visitedCommands = new HashSet<>();
@@ -133,12 +158,26 @@ public class DiscordBot extends AbstractIdleService {
 						boolean showAdmin = event.getChannelType() != ChannelType.PRIVATE
 								&& event.getMember().hasPermission(Permission.ADMINISTRATOR);
 						List<String> helps = commands.values().stream()
-								.filter(c -> c.getHelp().isPresent() && (!c.isAdminOnly() || showAdmin)
+								.filter(c -> c.getHelp().isPresent()
+										&& (!c.hasRestriction(CommandRestriction.ADMIN_ONLY) || showAdmin)
 										&& visitedCommands.add(c))
 								.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
 								.map(c -> "> ``" + commandPrefix.orElse("") + c.getName() + "``"
 										+ c.getAliasesString(commandPrefix.orElse(""))
-										+ (c.isAdminOnly() ? " (ADMIN ONLY)" : "") + "\n" + c.getHelp().get() + "\n")
+										+ (c.hasRestriction(CommandRestriction.ADMIN_ONLY) ? " (ADMIN ONLY)" : "")
+										+ (c.hasRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY)
+												? " (PRIVATE MESSAGE ONLY)"
+												: "")
+										+ (c.hasRestriction(CommandRestriction.GUILD_CHANNEL_ONLY)
+												? " (SERVER CHANNEL ONLY)"
+												: "")
+										+ (c.hasRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY)
+												? " (MESSAGE ONLY)"
+												: "")
+										+ (c.hasRestriction(CommandRestriction.SLASH_COMMANDS_ONLY)
+												? " (SLASH COMMAND ONLY)"
+												: "")
+										+ "\n" + c.getHelp().get() + "\n")
 								.collect(Collectors.toList());
 						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
 						if (!event.isFromType(ChannelType.PRIVATE)) {
@@ -147,6 +186,8 @@ public class DiscordBot extends AbstractIdleService {
 						}
 					}
 				});
+		commandDefinition.setRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
+		return commandDefinition;
 	}
 
 	private CommandDefinition createCommandInfo() {
@@ -178,39 +219,47 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	private CommandDefinition createCommandPrefix() {
-		return new CommandDefinition(COMMAND_PREFIX, false, "Shows the prefix used by this bot.", new CommandHandler() {
-			@Override
-			public void handleCommand(CommandEvent event) throws Exception {
-				if (event.getChannelType() == ChannelType.PRIVATE && !commandPrefix.isPresent()) {
-					event.getChannel().sendMessage(
-							"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:")
-							.complete();
-					return;
-				}
+		CommandDefinition commandDefinition = new CommandDefinition(COMMAND_PREFIX, false,
+				"Shows the prefix used by this bot.", new CommandHandler() {
+					@Override
+					public void handleCommand(CommandEvent event) throws Exception {
+						if (event.getChannelType() == ChannelType.PRIVATE && !commandPrefix.isPresent()) {
+							event.getChannel().sendMessage(
+									"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:")
+									.complete();
+							return;
+						}
 
-				Optional<String> effectivePrefix = getEffectivePrefix(event);
+						Optional<String> effectivePrefix = getEffectivePrefix(event);
 
-				if (effectivePrefix.isPresent()) {
-					event.reply("```Prefix: " + effectivePrefix.get() + "```");
-				} else {
-					event.reply("No prefix has been set for this server! Type " + jda.getSelfUser().getAsMention()
-							+ " before the command instead. :slight_smile:");
-				}
-			}
-		});
+						if (effectivePrefix.isPresent()) {
+							event.reply("```Prefix: " + effectivePrefix.get() + "```");
+						} else {
+							event.reply("No prefix has been set for this server! Type "
+									+ jda.getSelfUser().getAsMention() + " before the command instead. :slight_smile:");
+						}
+					}
+				});
+		commandDefinition.setRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+		commandDefinition.setRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
+		return commandDefinition;
 	}
 
 	private CommandDefinition createCommandSetPrefix() {
-		return new CommandDefinition("setPrefix", true, "Change the prefix used by this bot.", new CommandHandler() {
-			@Override
-			public void handleCommand(CommandEvent event) throws Exception {
-				JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
-				String prefix = event.getOption("prefix");
-				guildJson.put(COMMAND_PREFIX, prefix);
-				GuildSettings.save(event.getGuild().getId(), guildJson);
-				event.reply("Prefix has been changed to `" + prefix + "`");
-			}
-		}, new CommandOptionDefinition(OptionType.STRING, "prefix", "Prefix to be changed to.", true));
+		CommandDefinition commandDefinition = new CommandDefinition("setPrefix", true,
+				"Change the prefix used by this bot.", new CommandHandler() {
+					@Override
+					public void handleCommand(CommandEvent event) throws Exception {
+						JSONObject guildJson = GuildSettings.get(event.getGuild().getId());
+						String prefix = event.getParam("prefix");
+						guildJson.put(COMMAND_PREFIX, prefix);
+						GuildSettings.save(event.getGuild().getId(), guildJson);
+						event.reply("Prefix has been changed to `" + prefix + "`");
+					}
+				}, new CommandOptionDefinition(OptionType.STRING, "prefix", "Prefix to be changed to.", true));
+		commandDefinition.setRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+		commandDefinition.setRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
+		return commandDefinition;
 	}
 
 	public Optional<String> getCommandPrefix() {
@@ -391,7 +440,8 @@ public class DiscordBot extends AbstractIdleService {
 						MessageChannel channel = message.getChannel();
 						String rawContent = message.getContentRaw().trim();
 
-						String mentionMe = event.getJDA().getSelfUser().getAsMention();
+						String mentionMe = "<@!" + event.getJDA().getSelfUser().getId() + ">";
+						// String mentionMe = event.getJDA().getSelfUser().getAsMention();
 
 						boolean isPrivateChannel = channel instanceof PrivateChannel;
 						if (isPrivateChannel && ignorePrivateChannels) {
@@ -421,12 +471,26 @@ public class DiscordBot extends AbstractIdleService {
 								CommandDefinition commandDefinition = commands.get(command.toLowerCase());
 								if (commandDefinition != null) {
 									boolean isPermitted = true;
-									if (commandDefinition.isAdminOnly()) {
+									if (commandDefinition.hasRestriction(CommandRestriction.ADMIN_ONLY)) {
 										if (isPrivateChannel) {
 											isPermitted = false;
 										} else {
 											isPermitted = event.getMember().hasPermission(Permission.ADMINISTRATOR);
 										}
+									}
+
+									if (commandDefinition.hasRestriction(CommandRestriction.SLASH_COMMANDS_ONLY)) {
+										isPermitted = false;
+									}
+
+									if (isPrivateChannel && commandDefinition
+											.hasRestriction(CommandRestriction.GUILD_CHANNEL_ONLY)) {
+										isPermitted = false;
+									}
+
+									if (!isPrivateChannel && commandDefinition
+											.hasRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY)) {
+										isPermitted = false;
 									}
 
 									if (isPermitted) {
@@ -440,21 +504,24 @@ public class DiscordBot extends AbstractIdleService {
 											}
 										});
 										Map<String, String> options = new LinkedHashMap<>();
-										for (int i = 0; i < commandDefinition.getOptions().length; i++) {
-											CommandOptionDefinition optionDefinition = commandDefinition
-													.getOptions()[i];
+										for (int i = 0; i < commandDefinition.getOptions().size(); i++) {
+											CommandOptionDefinition optionDefinition = commandDefinition.getOptions()
+													.get(i);
 											if (i < args.length) {
 												options.put(optionDefinition.getName(), args[i]);
 											}
 										}
 										MessageCommandEvent commandEvent = new MessageCommandEvent(event, options);
-										try {
-											commandDefinition.getHandler().handleCommand(commandEvent);
-										} catch (Exception e) {
-											exceptionHandler.handleException(commandDefinition, commandEvent, e);
-										} finally {
-											keepTyping.set(false);
-										}
+
+										commandService.submit(() -> {
+											try {
+												commandDefinition.getHandler().handleCommand(commandEvent);
+											} catch (Exception e) {
+												exceptionHandler.handleException(commandDefinition, commandEvent, e);
+											} finally {
+												keepTyping.set(false);
+											}
+										});
 									}
 								}
 							}
@@ -475,15 +542,17 @@ public class DiscordBot extends AbstractIdleService {
 						CommandDefinition commandDefinition = commands.get(event.getName());
 						SlashInteractionCommandEvent commandEvent = new SlashInteractionCommandEvent(event, hook);
 
-						try {
-							commandDefinition.getHandler().handleCommand(commandEvent);
-						} catch (Exception e) {
-							exceptionHandler.handleException(commandDefinition, commandEvent, e);
-						} finally {
-							if (!commandEvent.hasReplied()) {
-								hook.deleteOriginal().complete();
+						commandService.submit(() -> {
+							try {
+								commandDefinition.getHandler().handleCommand(commandEvent);
+							} catch (Exception e) {
+								exceptionHandler.handleException(commandDefinition, commandEvent, e);
+							} finally {
+								if (!commandEvent.hasReplied()) {
+									hook.deleteOriginal().complete();
+								}
 							}
-						}
+						});
 					}
 				});
 		if (customSetup != null) {
@@ -495,18 +564,12 @@ public class DiscordBot extends AbstractIdleService {
 			String guildId = configJson.getString("debug_guild_commands");
 			Guild guild = jda.getGuildById(guildId);
 			CommandListUpdateAction updateCommands = guild.updateCommands();
-
-			for (Entry<String, CommandDefinition> entry : commands.entrySet()) {
-				CommandData commandData = new CommandData(entry.getKey(), entry.getValue().getHelp().orElse(""))
-						.setDefaultEnabled(!entry.getValue().isAdminOnly());
-				for (CommandOptionDefinition option : entry.getValue().getOptions()) {
-					commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
-							option.isRequired());
-				}
-				updateCommands = updateCommands.addCommands(commandData);
-			}
-
+			buildUpdateCommands(updateCommands);
 			updateCommands.queue();
 		}
+
+		CommandListUpdateAction updateCommands = jda.updateCommands();
+		buildUpdateCommands(updateCommands);
+		updateCommands.queue();
 	}
 }

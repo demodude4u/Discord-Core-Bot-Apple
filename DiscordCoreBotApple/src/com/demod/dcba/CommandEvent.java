@@ -1,5 +1,7 @@
 package com.demod.dcba;
 
+import java.util.Optional;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
@@ -22,9 +24,11 @@ public abstract class CommandEvent {
 
 	public abstract Member getMember();
 
-	public abstract String getOption(String name);
+	public abstract String getParam(String name);
 
 	public abstract boolean isFromType(ChannelType private1);
+
+	public abstract Optional<String> optParam(String name);
 
 	public abstract void reply(MessageEmbed build);
 

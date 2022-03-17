@@ -1,6 +1,7 @@
 package com.demod.dcba;
 
 import java.util.Map;
+import java.util.Optional;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -52,13 +53,18 @@ public class MessageCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public String getOption(String name) {
+	public String getParam(String name) {
 		return options.get(name);
 	}
 
 	@Override
 	public boolean isFromType(ChannelType private1) {
 		return event.isFromType(private1);
+	}
+
+	@Override
+	public Optional<String> optParam(String name) {
+		return Optional.ofNullable(options.get(name));
 	}
 
 	@Override
