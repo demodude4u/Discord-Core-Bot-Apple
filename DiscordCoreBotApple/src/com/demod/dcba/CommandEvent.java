@@ -12,27 +12,32 @@ import net.dv8tion.jda.api.entities.GuildChannel;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
 public class CommandEvent {
 
-	private final SlashCommandEvent event;
+	private final SlashCommandInteractionEvent event;
 	private final InteractionHook hook;
 	private final Interaction interaction;
 
 	private boolean replied = false;
 
-	public CommandEvent(SlashCommandEvent event, InteractionHook hook) {
+	public CommandEvent(SlashCommandInteractionEvent event, InteractionHook hook) {
 		this.event = event;
 		this.hook = hook;
 		this.interaction = hook.getInteraction();
+	}
+
+	public Attachment getAttachment(String name) {
+		return event.getOption(name).getAsAttachment();
 	}
 
 	public User getAuthor() {
@@ -113,6 +118,10 @@ public class CommandEvent {
 
 	public boolean isFromType(ChannelType type) {
 		return interaction.getChannel().getType() == type;
+	}
+
+	public Optional<Attachment> optParamAttachment(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsAttachment);
 	}
 
 	public Optional<Boolean> optParamBoolean(String name) {

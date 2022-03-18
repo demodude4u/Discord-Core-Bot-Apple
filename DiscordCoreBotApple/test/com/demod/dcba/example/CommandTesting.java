@@ -27,6 +27,8 @@ public class CommandTesting {
 					event.optParamRole("role").ifPresent(o -> embed.addField("role", "" + o.getName(), true));
 					event.optParamString("string").ifPresent(o -> embed.addField("string", "" + o, true));
 					event.optParamUser("user").ifPresent(o -> embed.addField("user", "" + o.getName(), true));
+					event.optParamAttachment("attachment")
+							.ifPresent(o -> embed.addField("attachment", "" + o.getUrl(), true));
 				})//
 				.withHelp("The bot will recite the parameters that it recognized.")//
 				.withOptionalParam(OptionType.BOOLEAN, "boolean", "description")//
@@ -37,6 +39,7 @@ public class CommandTesting {
 				.withOptionalParam(OptionType.ROLE, "role", "description")//
 				.withOptionalParam(OptionType.STRING, "string", "description")//
 				.withOptionalParam(OptionType.USER, "user", "description")//
+				.withOptionalParam(OptionType.ATTACHMENT, "attachment", "description")
 				//
 				//
 				.addSimpleCommand("busy", event -> {

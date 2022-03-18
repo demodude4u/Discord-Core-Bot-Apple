@@ -34,7 +34,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.PrivateChannel;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
@@ -43,7 +43,8 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 
 public class DiscordBot extends AbstractIdleService {
@@ -97,7 +98,8 @@ public class DiscordBot extends AbstractIdleService {
 			if (entry.getValue().hasRestriction(CommandRestriction.ADMIN_ONLY)) {
 				continue;// For now, no admin/permissioned commands, it gets complicated
 			}
-			CommandData commandData = new CommandData(entry.getKey(), entry.getValue().getHelp().orElse(""));
+			SlashCommandData commandData = Commands.slash(entry.getKey(),
+					entry.getValue().getHelp().orElse("No description."));
 			for (CommandOptionDefinition option : entry.getValue().getOptions()) {
 				commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
 						option.isRequired());
@@ -392,7 +394,7 @@ public class DiscordBot extends AbstractIdleService {
 					}
 
 					@Override
-					public void onSlashCommand(SlashCommandEvent event) {
+					public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
 						InteractionHook hook = event.deferReply(false).complete();
 
 						CommandDefinition commandDefinition = commands.get(event.getName());
