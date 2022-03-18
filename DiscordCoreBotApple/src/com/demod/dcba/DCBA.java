@@ -19,26 +19,26 @@ public final class DCBA {
 	public static interface Builder {
 		CommandBuilder addCommand(String command, CommandHandler handler);
 
-		default CommandBuilder addCommand(String command, SimpleEmbedResponse handler) {
-			return addCommand(command, (CommandHandler) handler);
-		}
-
-		default CommandBuilder addCommand(String command, SimpleResponse handler) {
-			return addCommand(command, (CommandHandler) handler);
-		}
-
 		Builder addReactionWatcher(ReactionWatcher watcher);
 
 		default Builder addReactionWatcher(ReactionWatcher.SimpleWatcher watcher) {
 			return addReactionWatcher((ReactionWatcher) watcher);
 		}
 
-		default CommandBuilder addSlashCommand(String command, SimpleEmbedSlashResponse handler) {
-			return addCommand(command, (CommandHandler) handler).slashCommandOnly();
+		default CommandBuilder addSimpleCommand(String command, SimpleEmbedResponse handler) {
+			return addCommand(command, handler);
 		}
 
-		default CommandBuilder addSlashCommand(String command, SimpleSlashResponse handler) {
-			return addCommand(command, (CommandHandler) handler).slashCommandOnly();
+		default CommandBuilder addSimpleCommand(String command, SimpleResponse handler) {
+			return addCommand(command, handler);
+		}
+
+		default CommandBuilder addSimpleSlashCommand(String command, SimpleEmbedSlashResponse handler) {
+			return addCommand(command, handler).slashCommandOnly();
+		}
+
+		default CommandBuilder addSimpleSlashCommand(String command, SimpleSlashResponse handler) {
+			return addCommand(command, handler).slashCommandOnly();
 		}
 
 		default CommandBuilder addSlashCommand(String command, SlashCommandHandler handler) {

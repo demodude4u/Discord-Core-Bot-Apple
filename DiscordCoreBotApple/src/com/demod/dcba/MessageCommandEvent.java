@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
@@ -16,10 +17,16 @@ public class MessageCommandEvent extends CommandEvent {
 
 	private final MessageReceivedEvent event;
 	private final Map<String, String> options;
+	private final String[] args;
 
-	public MessageCommandEvent(MessageReceivedEvent event, Map<String, String> options) {
+	public MessageCommandEvent(MessageReceivedEvent event, Map<String, String> options, String[] args) {
 		this.event = event;
 		this.options = options;
+		this.args = args;
+	}
+
+	public String[] getArgs() {
+		return args;
 	}
 
 	@Override
@@ -28,13 +35,13 @@ public class MessageCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public MessageChannel getChannel() {
-		return event.getChannel();
+	public ChannelType getChannelType() {
+		return event.getChannelType();
 	}
 
 	@Override
-	public ChannelType getChannelType() {
-		return event.getChannelType();
+	public String getCommandString() {
+		return event.getMessage().getContentDisplay();
 	}
 
 	@Override
@@ -50,6 +57,15 @@ public class MessageCommandEvent extends CommandEvent {
 	@Override
 	public Member getMember() {
 		return event.getMember();
+	}
+
+	public Message getMessage() {
+		return event.getMessage();
+	}
+
+	@Override
+	public MessageChannel getMessageChannel() {
+		return event.getChannel();
 	}
 
 	@Override
@@ -68,13 +84,18 @@ public class MessageCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public void reply(MessageEmbed build) {
-		event.getChannel().sendMessageEmbeds(build).complete();
+	public Message reply(Message message) {
+		return event.getChannel().sendMessage(message).complete();
 	}
 
 	@Override
-	public void reply(String response) {
-		DiscordUtils.replyTo(event.getChannel(), response);
+	public Message replyEmbed(MessageEmbed build) {
+		return event.getChannel().sendMessageEmbeds(build).complete();
+	}
+
+	@Override
+	public Message replyFile(byte[] data, String filename) {
+		return event.getChannel().sendFile(data, filename).complete();
 	}
 
 }

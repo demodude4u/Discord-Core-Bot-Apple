@@ -32,6 +32,8 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
@@ -86,7 +88,7 @@ public class DiscordBot extends AbstractIdleService {
 
 		exceptionHandler = (command, event, e) -> {
 			e.printStackTrace();
-			DiscordUtils.replyTo(event.getChannel(), "Unhandled Error: [" + e.getClass().getSimpleName() + "] "
+			event.reply("Unhandled Error: [" + e.getClass().getSimpleName() + "] "
 					+ ((e.getMessage() != null) ? e.getMessage() : ""));
 		};
 	}
@@ -140,7 +142,7 @@ public class DiscordBot extends AbstractIdleService {
 						builder.addField("Ping to Discord", ping + " ms", true);
 						builder.addField("Responses to Discord", responseTotal + " responses", true);
 
-						event.reply(builder.build());
+						event.replyEmbed(builder.build());
 					}
 				});
 		commandDefinition.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
@@ -162,8 +164,10 @@ public class DiscordBot extends AbstractIdleService {
 										&& (!c.hasRestriction(CommandRestriction.ADMIN_ONLY) || showAdmin)
 										&& visitedCommands.add(c))
 								.sorted((c1, c2) -> c1.getName().compareTo(c2.getName()))
-								.map(c -> "> ``" + commandPrefix.orElse("") + c.getName() + "``"
-										+ c.getAliasesString(commandPrefix.orElse(""))
+								.map(c -> "> ``"
+										+ (c.hasRestriction(CommandRestriction.SLASH_COMMANDS_ONLY) ? "/"
+												: commandPrefix.orElse(""))
+										+ c.getName() + "``" + c.getAliasesString(commandPrefix.orElse(""))
 										+ (c.hasRestriction(CommandRestriction.ADMIN_ONLY) ? " (ADMIN ONLY)" : "")
 										+ (c.hasRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY)
 												? " (PRIVATE MESSAGE ONLY)"
@@ -179,10 +183,16 @@ public class DiscordBot extends AbstractIdleService {
 												: "")
 										+ "\n" + c.getHelp().get() + "\n")
 								.collect(Collectors.toList());
-						DiscordUtils.replyTo(event.getAuthor().openPrivateChannel().complete(), helps);
 						if (!event.isFromType(ChannelType.PRIVATE)) {
+							MessageChannel channel = event.getAuthor().openPrivateChannel().complete();
+							new MessageBuilder(helps.stream().collect(Collectors.joining("\n")))
+									.buildAll(SplitPolicy.NEWLINE).forEach(m -> {
+										channel.sendMessage(m).complete();
+									});
 							event.reply("I have sent you a message, " + event.getAuthor().getAsMention()
 									+ "! :slight_smile:");
+						} else {
+							event.reply(helps);
 						}
 					}
 				});
@@ -213,7 +223,7 @@ public class DiscordBot extends AbstractIdleService {
 							false);
 				}
 
-				event.reply(builder.build());
+				event.replyEmbed(builder.build());
 			}
 		});
 	}
@@ -224,9 +234,8 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void handleCommand(CommandEvent event) throws Exception {
 						if (event.getChannelType() == ChannelType.PRIVATE && !commandPrefix.isPresent()) {
-							event.getChannel().sendMessage(
-									"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:")
-									.complete();
+							event.reply(
+									"No prefix has been set for private channels! Type the commands without a prefix. :slight_smile:");
 							return;
 						}
 
@@ -511,7 +520,8 @@ public class DiscordBot extends AbstractIdleService {
 												options.put(optionDefinition.getName(), args[i]);
 											}
 										}
-										MessageCommandEvent commandEvent = new MessageCommandEvent(event, options);
+										MessageCommandEvent commandEvent = new MessageCommandEvent(event, options,
+												args);
 
 										commandService.submit(() -> {
 											try {
@@ -559,6 +569,7 @@ public class DiscordBot extends AbstractIdleService {
 			builder = customSetup.apply(builder);
 		}
 		jda = builder.build().awaitReady();
+		jda.setRequiredScopes("bot", "applications.commands");
 
 		if (configJson.has("debug_guild_commands")) {
 			String guildId = configJson.getString("debug_guild_commands");

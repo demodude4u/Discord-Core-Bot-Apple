@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
@@ -34,13 +35,13 @@ public class SlashInteractionCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public MessageChannel getChannel() {
-		return interaction.getMessageChannel();
+	public ChannelType getChannelType() {
+		return interaction.getChannelType();
 	}
 
 	@Override
-	public ChannelType getChannelType() {
-		return interaction.getChannelType();
+	public String getCommandString() {
+		return event.getCommandString();
 	}
 
 	@Override
@@ -56,6 +57,11 @@ public class SlashInteractionCommandEvent extends CommandEvent {
 	@Override
 	public Member getMember() {
 		return interaction.getMember();
+	}
+
+	@Override
+	public MessageChannel getMessageChannel() {
+		return interaction.getMessageChannel();
 	}
 
 	@Override
@@ -86,16 +92,21 @@ public class SlashInteractionCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public void reply(MessageEmbed build) {
-		hook.sendMessageEmbeds(build).setEphemeral(false).complete();
+	public Message reply(Message message) {
 		replied = true;
+		return null;
 	}
 
 	@Override
-	public void reply(String response) {
-		// TODO determine max message size, use DiscordUtils to split multiple replies
-		hook.sendMessage(response).setEphemeral(false).complete();
+	public Message replyEmbed(MessageEmbed build) {
 		replied = true;
+		return hook.sendMessageEmbeds(build).setEphemeral(false).complete();
+	}
+
+	@Override
+	public Message replyFile(byte[] data, String filename) {
+		replied = true;
+		return hook.sendFile(data, filename).complete();
 	}
 
 }

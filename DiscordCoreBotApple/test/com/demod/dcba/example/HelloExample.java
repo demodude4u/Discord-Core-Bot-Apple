@@ -14,11 +14,11 @@ public class HelloExample {
 		DiscordBot bot = DCBA.builder()//
 				.withCommandPrefix("!")//
 				//
-				.addCommand("hello", (event) -> "Hi " + event.getAuthor().getAsMention() + "!")//
+				.addSimpleCommand("hello", (event) -> "Hi " + event.getAuthor().getAsMention() + "!")//
 				.withAliases("hi", "hey", "howdy")//
 				.withHelp("The bot will say hi to you!")//
 				//
-				.addCommand("helloAdmin", (event) -> "Hi admin " + event.getAuthor().getAsMention() + "!")//
+				.addSimpleCommand("helloAdmin", (event) -> "Hi admin " + event.getAuthor().getAsMention() + "!")//
 				.adminOnly()//
 				.withHelp("The bot will say hi to you, and mention you as an admin!")//
 				//

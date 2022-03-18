@@ -12,7 +12,7 @@ public interface CommandHandler {
 			EmbedBuilder embed = new EmbedBuilder();
 			handleSimpleResponse(event, embed);
 			if (!embed.isEmpty()) {
-				event.reply(embed.build());
+				event.replyEmbed(embed.build());
 			}
 		}
 

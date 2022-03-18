@@ -16,7 +16,7 @@ public class CommandTesting {
 				.withCommandPrefix("!")//
 				//
 				//
-				.addSlashCommand("params", (event, embed) -> {
+				.addSimpleSlashCommand("params", (event, embed) -> {
 					event.optParamMapping("boolean")
 							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsBoolean(), true));
 					event.optParamMapping("channel")
@@ -45,13 +45,23 @@ public class CommandTesting {
 				.withOptionalParam(OptionType.USER, "user", "description")//
 				//
 				//
-				.addSlashCommand("busy", event -> {
+				.addSimpleSlashCommand("busy", event -> {
 					long seconds = event.getParamMapping("seconds").getAsLong();
 					Uninterruptibles.sleepUninterruptibly(seconds, TimeUnit.SECONDS);
 					return "Waited " + seconds + " seconds!";
 				})//
 				.withHelp("Simulate a command that takes some time to finish.")//
 				.withParam(OptionType.INTEGER, "seconds", "Seconds to wait before the command is completed.")
+				//
+				//
+				.addSlashCommand("multi-reply", event -> {
+					String[] messages = event.getParam("messages").split(",");
+					for (String message : messages) {
+						event.reply(message.trim());
+					}
+				})//
+				.withHelp("Replies back with multiple messages.")
+				.withParam(OptionType.STRING, "messages", "Comma delimited messages.")
 				//
 				//
 				.create();
