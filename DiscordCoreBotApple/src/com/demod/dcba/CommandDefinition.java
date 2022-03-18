@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public class CommandDefinition {
 	public enum CommandRestriction {
-		ADMIN_ONLY, SLASH_COMMANDS_ONLY, MESSAGE_COMMANDS_ONLY, PRIVATE_CHANNEL_ONLY, GUILD_CHANNEL_ONLY
+		ADMIN_ONLY, PRIVATE_CHANNEL_ONLY, GUILD_CHANNEL_ONLY
 	}
 
 	private final String name;

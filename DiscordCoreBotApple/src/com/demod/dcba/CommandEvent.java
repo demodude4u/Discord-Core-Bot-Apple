@@ -8,33 +8,152 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.GuildChannel;
+import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.Interaction;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
-public abstract class CommandEvent {
+public class CommandEvent {
 
-	public abstract User getAuthor();
+	private final SlashCommandEvent event;
+	private final InteractionHook hook;
+	private final Interaction interaction;
 
-	public abstract ChannelType getChannelType();
+	private boolean replied = false;
 
-	public abstract String getCommandString();
+	public CommandEvent(SlashCommandEvent event, InteractionHook hook) {
+		this.event = event;
+		this.hook = hook;
+		this.interaction = hook.getInteraction();
+	}
 
-	public abstract Guild getGuild();
+	public User getAuthor() {
+		return interaction.getUser();
+	}
 
-	public abstract JDA getJDA();
+	public ChannelType getChannelType() {
+		return interaction.getChannelType();
+	}
 
-	public abstract Member getMember();
+	public String getCommandString() {
+		return event.getCommandString();
+	}
 
-	public abstract MessageChannel getMessageChannel();
+	public Guild getGuild() {
+		return interaction.getGuild();
+	}
 
-	public abstract String getParam(String name);
+	public JDA getJDA() {
+		return interaction.getJDA();
+	}
 
-	public abstract boolean isFromType(ChannelType private1);
+	public Member getMember() {
+		return interaction.getMember();
+	}
 
-	public abstract Optional<String> optParam(String name);
+	public MessageChannel getMessageChannel() {
+		return interaction.getMessageChannel();
+	}
+
+	public boolean getParamBoolean(String name) {
+		return event.getOption(name).getAsBoolean();
+	}
+
+	public double getParamDouble(String name) {
+		return event.getOption(name).getAsDouble();
+	}
+
+	public GuildChannel getParamGuildChannel(String name) {
+		return event.getOption(name).getAsGuildChannel();
+	}
+
+	public long getParamLong(String name) {
+		return event.getOption(name).getAsLong();
+	}
+
+	public Member getParamMember(String name) {
+		return event.getOption(name).getAsMember();
+	}
+
+	public IMentionable getParamMentionable(String name) {
+		return event.getOption(name).getAsMentionable();
+	}
+
+	public MessageChannel getParamMessageChannel(String name) {
+		return event.getOption(name).getAsMessageChannel();
+	}
+
+	public Role getParamRole(String name) {
+		return event.getOption(name).getAsRole();
+	}
+
+	public List<OptionMapping> getParams() {
+		return event.getOptions();
+	}
+
+	public String getParamString(String name) {
+		return event.getOption(name).getAsString();
+	}
+
+	public User getParamUser(String name) {
+		return event.getOption(name).getAsUser();
+	}
+
+	public boolean hasReplied() {
+		return replied;
+	}
+
+	public boolean isFromType(ChannelType type) {
+		return interaction.getChannel().getType() == type;
+	}
+
+	public Optional<Boolean> optParamBoolean(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsBoolean);
+	}
+
+	public Optional<Double> optParamDouble(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsDouble);
+	}
+
+	public Optional<GuildChannel> optParamGuildChannel(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsGuildChannel);
+	}
+
+	public Optional<Long> optParamLong(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsLong);
+	}
+
+	public Optional<Member> optParamMember(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsMember);
+	}
+
+	public Optional<IMentionable> optParamMentionable(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsMentionable);
+	}
+
+	public Optional<MessageChannel> optParamMessageChannel(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsMessageChannel);
+	}
+
+	public Optional<Role> optParamRole(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsRole);
+	}
+
+	public Optional<String> optParamString(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsString);
+	}
+
+	public Optional<User> optParamUser(String name) {
+		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsUser);
+	}
 
 	public void reply(List<String> responseSegments) {
 		MessageBuilder builder = new MessageBuilder();
@@ -58,7 +177,10 @@ public abstract class CommandEvent {
 		}
 	}
 
-	public abstract Message reply(Message message);
+	public Message reply(Message message) {
+		replied = true;
+		return hook.sendMessage(message).setEphemeral(false).complete();
+	}
 
 	public void reply(String response) {
 //		int maxSizeWithSafety = DiscordConsts.MAX_MESSAGE_SIZE - 1;
@@ -76,8 +198,14 @@ public abstract class CommandEvent {
 		}
 	}
 
-	public abstract Message replyEmbed(MessageEmbed build);
+	public Message replyEmbed(MessageEmbed build) {
+		replied = true;
+		return hook.sendMessageEmbeds(build).setEphemeral(false).complete();
+	}
 
-	public abstract Message replyFile(byte[] data, String filename);
+	public Message replyFile(byte[] data, String filename) {
+		replied = true;
+		return hook.sendFile(data, filename).setEphemeral(false).complete();
+	}
 
 }

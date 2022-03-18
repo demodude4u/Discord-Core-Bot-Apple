@@ -16,23 +16,17 @@ public class CommandTesting {
 				.withCommandPrefix("!")//
 				//
 				//
-				.addSimpleSlashCommand("params", (event, embed) -> {
-					event.optParamMapping("boolean")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsBoolean(), true));
-					event.optParamMapping("channel")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsGuildChannel().getName(), true));
-					event.optParamMapping("integer")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsLong(), true));
-					event.optParamMapping("mentionable").ifPresent(
-							o -> embed.addField(o.getName(), "" + o.getAsMentionable().getAsMention(), true));
-					event.optParamMapping("number")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsDouble(), true));
-					event.optParamMapping("role")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsRole().getName(), true));
-					event.optParamMapping("string")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsString(), true));
-					event.optParamMapping("user")
-							.ifPresent(o -> embed.addField(o.getName(), "" + o.getAsUser().getName(), true));
+				.addSimpleCommand("params", (event, embed) -> {
+					event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
+					event.optParamGuildChannel("channel")
+							.ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
+					event.optParamLong("integer").ifPresent(o -> embed.addField("integer", "" + o, true));
+					event.optParamMentionable("mentionable")
+							.ifPresent(o -> embed.addField("mentionable", "" + o.getAsMention(), true));
+					event.optParamDouble("number").ifPresent(o -> embed.addField("number", "" + o, true));
+					event.optParamRole("role").ifPresent(o -> embed.addField("role", "" + o.getName(), true));
+					event.optParamString("string").ifPresent(o -> embed.addField("string", "" + o, true));
+					event.optParamUser("user").ifPresent(o -> embed.addField("user", "" + o.getName(), true));
 				})//
 				.withHelp("The bot will recite the parameters that it recognized.")//
 				.withOptionalParam(OptionType.BOOLEAN, "boolean", "description")//
@@ -45,8 +39,8 @@ public class CommandTesting {
 				.withOptionalParam(OptionType.USER, "user", "description")//
 				//
 				//
-				.addSimpleSlashCommand("busy", event -> {
-					long seconds = event.getParamMapping("seconds").getAsLong();
+				.addSimpleCommand("busy", event -> {
+					long seconds = event.getParamLong("seconds");
 					Uninterruptibles.sleepUninterruptibly(seconds, TimeUnit.SECONDS);
 					return "Waited " + seconds + " seconds!";
 				})//
@@ -54,8 +48,8 @@ public class CommandTesting {
 				.withParam(OptionType.INTEGER, "seconds", "Seconds to wait before the command is completed.")
 				//
 				//
-				.addSlashCommand("multi-reply", event -> {
-					String[] messages = event.getParam("messages").split(",");
+				.addCommand("multi-reply", event -> {
+					String[] messages = event.getParamString("messages").split(",");
 					for (String message : messages) {
 						event.reply(message.trim());
 					}

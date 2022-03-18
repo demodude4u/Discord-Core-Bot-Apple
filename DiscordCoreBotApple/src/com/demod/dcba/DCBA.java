@@ -5,10 +5,7 @@ import java.util.function.Function;
 
 import com.demod.dcba.CommandDefinition.CommandRestriction;
 import com.demod.dcba.CommandHandler.SimpleEmbedResponse;
-import com.demod.dcba.CommandHandler.SimpleEmbedSlashResponse;
 import com.demod.dcba.CommandHandler.SimpleResponse;
-import com.demod.dcba.CommandHandler.SimpleSlashResponse;
-import com.demod.dcba.CommandHandler.SlashCommandHandler;
 
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
@@ -31,18 +28,6 @@ public final class DCBA {
 
 		default CommandBuilder addSimpleCommand(String command, SimpleResponse handler) {
 			return addCommand(command, handler);
-		}
-
-		default CommandBuilder addSimpleSlashCommand(String command, SimpleEmbedSlashResponse handler) {
-			return addCommand(command, handler).slashCommandOnly();
-		}
-
-		default CommandBuilder addSimpleSlashCommand(String command, SimpleSlashResponse handler) {
-			return addCommand(command, handler).slashCommandOnly();
-		}
-
-		default CommandBuilder addSlashCommand(String command, SlashCommandHandler handler) {
-			return addCommand(command, handler).slashCommandOnly();
 		}
 
 		Builder addTextWatcher(TextWatcher watcher);
@@ -124,13 +109,6 @@ public final class DCBA {
 		}
 
 		@Override
-		public CommandBuilder messageCommandOnly() {
-			command.setRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
-			command.clearRestriction(CommandRestriction.SLASH_COMMANDS_ONLY);
-			return this;
-		}
-
-		@Override
 		public CommandBuilder privateChannelOnly() {
 			command.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
 			command.clearRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
@@ -140,13 +118,6 @@ public final class DCBA {
 		@Override
 		public InfoBuilder setInfo(String botName) {
 			bot.getInfo().setBotName(Optional.of(botName));
-			return this;
-		}
-
-		@Override
-		public CommandBuilder slashCommandOnly() {
-			command.setRestriction(CommandRestriction.SLASH_COMMANDS_ONLY);
-			command.clearRestriction(CommandRestriction.MESSAGE_COMMANDS_ONLY);
 			return this;
 		}
 
@@ -235,11 +206,7 @@ public final class DCBA {
 
 		CommandBuilder guildChannelOnly();
 
-		CommandBuilder messageCommandOnly();
-
 		CommandBuilder privateChannelOnly();
-
-		CommandBuilder slashCommandOnly();
 
 		CommandBuilder withAliases(String... aliases);
 
