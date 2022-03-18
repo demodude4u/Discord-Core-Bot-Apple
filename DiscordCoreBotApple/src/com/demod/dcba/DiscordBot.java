@@ -295,7 +295,8 @@ public class DiscordBot extends AbstractIdleService {
 	protected void startUp() throws Exception {
 		info.addTechnology("[DCBA](https://github.com/demodude4u/Discord-Core-Bot-Apple)", Optional.empty(),
 				"Discord Core Bot Apple");
-		info.addTechnology("[JDA](https://github.com/DV8FromTheWorld/JDA)", Optional.of("4.4"), "Java Discord API");
+		info.addTechnology("[JDA](https://github.com/DV8FromTheWorld/JDA)", Optional.of("5.0 alpha"),
+				"Java Discord API");
 
 		if (configJson.has("command_prefix")) {
 			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
