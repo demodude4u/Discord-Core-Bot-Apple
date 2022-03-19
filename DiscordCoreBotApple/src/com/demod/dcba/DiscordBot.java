@@ -86,7 +86,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	public void addCommand(CommandDefinition command) {
 		commandPath.put(command.getPath(), command);
-		command.getLegacies().forEach(l -> commandLegacy.put(l, command));
+		command.getLegacies().forEach(l -> commandLegacy.put(l.toLowerCase(), command));
 	}
 
 	// Hold my beer
