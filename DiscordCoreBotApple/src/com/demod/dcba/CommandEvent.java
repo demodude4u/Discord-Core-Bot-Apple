@@ -3,6 +3,7 @@ package com.demod.dcba;
 import java.util.List;
 import java.util.Optional;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
@@ -203,7 +204,8 @@ public class CommandEvent {
 //		}
 
 		for (Message message : new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE)) {
-			reply(message);
+			// reply(message);
+			replyEmbed(new EmbedBuilder().appendDescription(message.getContentRaw()).build());
 		}
 	}
 

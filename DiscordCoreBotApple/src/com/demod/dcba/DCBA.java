@@ -153,7 +153,7 @@ public final class DCBA {
 		}
 
 		@Override
-		public CommandBuilder withLegacy(String... names) {
+		public CommandBuilder withLegacyWarning(String... names) {
 			for (String name : names) {
 				command.addLegacy(name);
 			}
@@ -204,7 +204,7 @@ public final class DCBA {
 
 		CommandBuilder privateChannelOnly();
 
-		CommandBuilder withLegacy(String... names);
+		CommandBuilder withLegacyWarning(String... names);
 
 		CommandBuilder withOptionalParam(OptionType type, String name, String description);
 

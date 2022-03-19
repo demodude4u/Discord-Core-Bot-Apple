@@ -16,9 +16,9 @@ public class HelloExample {
 				//
 				.addSimpleCommand("hello", "The bot will say hi to you!",
 						(event) -> "Hi " + event.getAuthor().getAsMention() + "!")//
-				.withLegacy("hello", "hi", "hey", "howdy")//
+				.withLegacyWarning("hello", "hi", "hey", "howdy")//
 				//
-				.addSimpleCommand("helloAdmin", "The bot will say hi to you, and mention you as an admin!",
+				.addSimpleCommand("helloadmin", "The bot will say hi to you, and mention you as an admin!",
 						(event) -> "Hi admin " + event.getAuthor().getAsMention() + "!")//
 				.adminOnly()//
 				//
