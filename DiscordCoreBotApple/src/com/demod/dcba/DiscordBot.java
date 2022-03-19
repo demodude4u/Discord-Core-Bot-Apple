@@ -21,7 +21,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.demod.dcba.CommandDefinition.CommandRestriction;
-import com.demod.dcba.CommandHandler.SimpleResponse;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -45,14 +44,16 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 
 public class DiscordBot extends AbstractIdleService {
 
 	private static final String COMMAND_INFO = "info";
-	private static final String COMMAND_BOTSTATS = "botstats";
 
-	private final Map<String, CommandDefinition> commands = new LinkedHashMap<>();
+	private final Map<String, CommandDefinition> commandPath = new LinkedHashMap<>();
+	private final Map<String, CommandDefinition> commandLegacy = new LinkedHashMap<>();
 
 	private final InfoDefinition info = new InfoDefinition();
 
@@ -84,29 +85,75 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	public void addCommand(CommandDefinition command) {
-		commands.put(command.getName().toLowerCase(), command);
-		command.getAliases().ifPresent(aliases -> {
-			for (String alias : aliases) {
-				commands.put(alias.toLowerCase(), command);
-			}
-		});
+		commandPath.put(command.getPath(), command);
+		command.getLegacies().forEach(l -> commandLegacy.put(l, command));
 	}
 
+	// Hold my beer
+	@SuppressWarnings("unchecked")
 	private void buildUpdateCommands(CommandListUpdateAction updateCommands) {
+		Map<String, Object> root = new LinkedHashMap<>();
 
-		for (Entry<String, CommandDefinition> entry : commands.entrySet()) {
-			if (entry.getValue().hasRestriction(CommandRestriction.ADMIN_ONLY)) {
-				continue;// For now, no admin/permissioned commands, it gets complicated
+		for (CommandDefinition command : commandPath.values()) {
+			String[] pathSplit = command.getPath().split("/");
+			Map<String, Object> group = root;
+			for (int i = 0; i < pathSplit.length; i++) {
+				String name = pathSplit[i];
+				if (i == pathSplit.length - 1) {
+					group.put(name, command);
+				} else {
+					Object subGroup = group.get(name);
+					if (subGroup == null) {
+						group.put(name, subGroup = new LinkedHashMap<String, Object>());
+					}
+					group = (Map<String, Object>) subGroup;
+				}
 			}
-			SlashCommandData commandData = Commands.slash(entry.getKey(),
-					entry.getValue().getHelp().orElse("No description."));
-			for (CommandOptionDefinition option : entry.getValue().getOptions()) {
-				commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
-						option.isRequired());
+
+		}
+
+		for (Entry<String, Object> rootEntry : root.entrySet()) {
+			SlashCommandData commandData;
+			if (rootEntry.getValue() instanceof CommandDefinition) {
+				CommandDefinition commandDefinition = (CommandDefinition) rootEntry.getValue();
+				commandData = Commands.slash(rootEntry.getKey(), commandDefinition.getDescription());
+				for (CommandOptionDefinition option : commandDefinition.getOptions()) {
+					commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
+							option.isRequired());
+				}
+			} else {
+				Map<String, Object> sub = (Map<String, Object>) rootEntry.getValue();
+				commandData = Commands.slash(rootEntry.getKey(),
+						sub.keySet().stream().collect(Collectors.joining(", ")));
+				for (Entry<String, Object> subEntry : sub.entrySet()) {
+					if (subEntry.getValue() instanceof CommandDefinition) {
+						CommandDefinition commandDefinition = (CommandDefinition) subEntry.getValue();
+						SubcommandData subcommandData = new SubcommandData(subEntry.getKey(),
+								commandDefinition.getDescription());
+						for (CommandOptionDefinition option : commandDefinition.getOptions()) {
+							subcommandData = subcommandData.addOption(option.getType(), option.getName(),
+									option.getDescription(), option.isRequired());
+						}
+						commandData = commandData.addSubcommands(subcommandData);
+					} else {
+						Map<String, CommandDefinition> subSub = (Map<String, CommandDefinition>) subEntry.getValue();
+						SubcommandGroupData subcommandGroupData = new SubcommandGroupData(subEntry.getKey(),
+								subSub.keySet().stream().collect(Collectors.joining(", ")));
+						for (Entry<String, CommandDefinition> subSubEntry : subSub.entrySet()) {
+							SubcommandData subcommandData = new SubcommandData(subSubEntry.getKey(),
+									subSubEntry.getValue().getDescription());
+							for (CommandOptionDefinition option : subSubEntry.getValue().getOptions()) {
+								subcommandData = subcommandData.addOption(option.getType(), option.getName(),
+										option.getDescription(), option.isRequired());
+							}
+							subcommandGroupData = subcommandGroupData.addSubcommands(subcommandData);
+						}
+						commandData = commandData.addSubcommandGroups(subcommandGroupData);
+					}
+				}
 			}
 			updateCommands = updateCommands.addCommands(commandData);
 		}
-
 	}
 
 	private boolean checkPermitted(MessageChannel channel, Member member, CommandDefinition commandDefinition) {
@@ -132,36 +179,8 @@ public class DiscordBot extends AbstractIdleService {
 		return isPermitted;
 	}
 
-	private CommandDefinition createCommandBotStats() {
-		CommandDefinition commandDefinition = new CommandDefinition(COMMAND_BOTSTATS, false,
-				"Display statistics about the usage of this bot.", new CommandHandler() {
-					@Override
-					public void handleCommand(CommandEvent event) throws Exception {
-						JDA jda = event.getJDA();
-						List<Guild> guilds = jda.getGuilds();
-
-						int guildCount = guilds.size();
-						int memberCount = guilds.stream().mapToInt(g -> g.getMembers().size()).sum();
-						String uptimeFormatted = getDurationFormatted(botStarted, LocalDateTime.now());
-						long ping = jda.getGatewayPing();
-						long responseTotal = jda.getResponseTotal();
-
-						EmbedBuilder builder = new EmbedBuilder();
-						builder.addField("Total Servers", guildCount + " servers", true);
-						builder.addField("Total Members", memberCount + " members", true);
-						builder.addField("Uptime", uptimeFormatted, true);
-						builder.addField("Ping to Discord", ping + " ms", true);
-						builder.addField("Responses to Discord", responseTotal + " responses", true);
-
-						event.replyEmbed(builder.build());
-					}
-				});
-		commandDefinition.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
-		return commandDefinition;
-	}
-
 	private CommandDefinition createCommandInfo() {
-		return new CommandDefinition(COMMAND_INFO, false, "Shows information about this bot.", new CommandHandler() {
+		return new CommandDefinition(COMMAND_INFO, "Shows information about this bot.", new CommandHandler() {
 			@Override
 			public void handleCommand(CommandEvent event) throws Exception {
 				EmbedBuilder builder = new EmbedBuilder();
@@ -178,6 +197,13 @@ public class DiscordBot extends AbstractIdleService {
 					builder.addField(group, info.getCredits().get(group).stream().collect(Collectors.joining("\n")),
 							false);
 				}
+
+				int guildCount = jda.getGuilds().size();
+				String uptimeFormatted = getDurationFormatted(botStarted, LocalDateTime.now());
+				long ping = jda.getGatewayPing();
+				builder.addField("Total Servers", guildCount + " servers", true);
+				builder.addField("Uptime", uptimeFormatted, true);
+				builder.addField("Ping to Discord", ping + " ms", true);
 
 				event.replyEmbed(builder.build());
 			}
@@ -232,19 +258,8 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	void initialize() {
-		if (!commands.containsKey(COMMAND_INFO)) {
-			commands.put(COMMAND_INFO, createCommandInfo());
-		}
-		if (!commands.containsKey(COMMAND_BOTSTATS)) {
-			commands.put(COMMAND_BOTSTATS, createCommandBotStats());
-		}
-
-		if (configJson.has("simple")) {
-			JSONObject secretJson = configJson.getJSONObject("simple");
-			secretJson.keySet().forEach(k -> {
-				String response = secretJson.getString(k);
-				commands.put(k, new CommandDefinition(k, (SimpleResponse) (e -> response)));
-			});
+		if (!commandPath.containsKey(COMMAND_INFO)) {
+			addCommand(createCommandInfo());
 		}
 	}
 
@@ -370,15 +385,15 @@ public class DiscordBot extends AbstractIdleService {
 							String[] split = rawContent.split("\\s+");
 							if (split.length > 0) {
 								String command = split[0];
-								CommandDefinition commandDefinition = commands.get(command.toLowerCase());
+								CommandDefinition commandDefinition = commandLegacy.get(command.toLowerCase());
 								if (commandDefinition != null) {
 									boolean isPermitted = checkPermitted(channel, event.getMember(), commandDefinition);
 
 									if (isPermitted) {
 										event.getChannel()
 												.sendMessageEmbeds(new EmbedBuilder()
-														.appendDescription(
-																"Please use /" + command.toLowerCase() + " instead!")
+														.appendDescription("Please use /"
+																+ commandDefinition.getPath().replace("/", " "))
 														.build())
 												.complete();
 									}
@@ -398,7 +413,7 @@ public class DiscordBot extends AbstractIdleService {
 					public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
 						InteractionHook hook = event.deferReply(false).complete();
 
-						CommandDefinition commandDefinition = commands.get(event.getName());
+						CommandDefinition commandDefinition = commandPath.get(event.getCommandPath());
 						CommandEvent commandEvent = new CommandEvent(event, hook);
 
 						commandService.submit(() -> {

@@ -16,21 +16,21 @@ public class CommandTesting {
 				.withCommandPrefix("!")//
 				//
 				//
-				.addSimpleCommand("params", (event, embed) -> {
-					event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
-					event.optParamGuildChannel("channel")
-							.ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
-					event.optParamLong("integer").ifPresent(o -> embed.addField("integer", "" + o, true));
-					event.optParamMentionable("mentionable")
-							.ifPresent(o -> embed.addField("mentionable", "" + o.getAsMention(), true));
-					event.optParamDouble("number").ifPresent(o -> embed.addField("number", "" + o, true));
-					event.optParamRole("role").ifPresent(o -> embed.addField("role", "" + o.getName(), true));
-					event.optParamString("string").ifPresent(o -> embed.addField("string", "" + o, true));
-					event.optParamUser("user").ifPresent(o -> embed.addField("user", "" + o.getName(), true));
-					event.optParamAttachment("attachment")
-							.ifPresent(o -> embed.addField("attachment", "" + o.getUrl(), true));
-				})//
-				.withHelp("The bot will recite the parameters that it recognized.")//
+				.addSimpleCommand("params", "The bot will recite the parameters that are recognized.",
+						(event, embed) -> {
+							event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
+							event.optParamGuildChannel("channel")
+									.ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
+							event.optParamLong("integer").ifPresent(o -> embed.addField("integer", "" + o, true));
+							event.optParamMentionable("mentionable")
+									.ifPresent(o -> embed.addField("mentionable", "" + o.getAsMention(), true));
+							event.optParamDouble("number").ifPresent(o -> embed.addField("number", "" + o, true));
+							event.optParamRole("role").ifPresent(o -> embed.addField("role", "" + o.getName(), true));
+							event.optParamString("string").ifPresent(o -> embed.addField("string", "" + o, true));
+							event.optParamUser("user").ifPresent(o -> embed.addField("user", "" + o.getName(), true));
+							event.optParamAttachment("attachment")
+									.ifPresent(o -> embed.addField("attachment", "" + o.getUrl(), true));
+						})//
 				.withOptionalParam(OptionType.BOOLEAN, "boolean", "description")//
 				.withOptionalParam(OptionType.CHANNEL, "channel", "description")//
 				.withOptionalParam(OptionType.INTEGER, "integer", "description")//
@@ -42,23 +42,26 @@ public class CommandTesting {
 				.withOptionalParam(OptionType.ATTACHMENT, "attachment", "description")
 				//
 				//
-				.addSimpleCommand("busy", event -> {
+				.addSimpleCommand("busy", "Simulate a command that takes some time to finish.", event -> {
 					long seconds = event.getParamLong("seconds");
 					Uninterruptibles.sleepUninterruptibly(seconds, TimeUnit.SECONDS);
 					return "Waited " + seconds + " seconds!";
 				})//
-				.withHelp("Simulate a command that takes some time to finish.")//
 				.withParam(OptionType.INTEGER, "seconds", "Seconds to wait before the command is completed.")
 				//
 				//
-				.addCommand("multi-reply", event -> {
+				.addCommand("multi-reply", "Replies back with multiple messages.", event -> {
 					String[] messages = event.getParamString("messages").split(",");
 					for (String message : messages) {
 						event.reply(message.trim());
 					}
 				})//
-				.withHelp("Replies back with multiple messages.")
 				.withParam(OptionType.STRING, "messages", "Comma delimited messages.")
+				//
+				//
+				.addSimpleCommand("path/test/command", "Command path test.", event -> "Success!")
+				.addSimpleCommand("path/test/command2", "Command path test.", event -> "Success!")
+				.addSimpleCommand("path/test2", "Command path test.", event -> "Success!")
 				//
 				//
 				.create();

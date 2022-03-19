@@ -14,13 +14,13 @@ public class HelloExample {
 		DiscordBot bot = DCBA.builder()//
 				.withCommandPrefix("!")//
 				//
-				.addSimpleCommand("hello", (event) -> "Hi " + event.getAuthor().getAsMention() + "!")//
-				.withAliases("hi", "hey", "howdy")//
-				.withHelp("The bot will say hi to you!")//
+				.addSimpleCommand("hello", "The bot will say hi to you!",
+						(event) -> "Hi " + event.getAuthor().getAsMention() + "!")//
+				.withLegacy("hello", "hi", "hey", "howdy")//
 				//
-				.addSimpleCommand("helloAdmin", (event) -> "Hi admin " + event.getAuthor().getAsMention() + "!")//
+				.addSimpleCommand("helloAdmin", "The bot will say hi to you, and mention you as an admin!",
+						(event) -> "Hi admin " + event.getAuthor().getAsMention() + "!")//
 				.adminOnly()//
-				.withHelp("The bot will say hi to you, and mention you as an admin!")//
 				//
 				.addTextWatcher((MessageReceivedEvent event) -> System.out
 						.println((event.getChannelType() == ChannelType.TEXT ? event.getGuild().getName() : "???")

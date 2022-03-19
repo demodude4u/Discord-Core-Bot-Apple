@@ -4,36 +4,29 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 
 public class CommandDefinition {
 	public enum CommandRestriction {
 		ADMIN_ONLY, PRIVATE_CHANNEL_ONLY, GUILD_CHANNEL_ONLY
 	}
 
-	private final String name;
+	private final String path;
+	private final String description;
 	private final CommandHandler handler;
 	private final List<CommandOptionDefinition> options = new ArrayList<>();
-	private Optional<String[]> aliases = Optional.empty();
-	private Optional<String> help = Optional.empty();
+	private final List<String> legacies = new ArrayList<>();
 	private final EnumSet<CommandRestriction> restrictions = EnumSet.noneOf(CommandRestriction.class);
 
-	public CommandDefinition(String name, boolean adminOnly, String help, CommandHandler handler,
+	public CommandDefinition(String path, String description, CommandHandler handler,
 			CommandOptionDefinition... options) {
-		this.name = name;
+		this.path = path;
+		this.description = description;
 		this.handler = handler;
 		Collections.addAll(this.options, options);
-		this.help = Optional.of(help);
-
-		if (adminOnly) {
-			setRestriction(CommandRestriction.ADMIN_ONLY);
-		}
 	}
 
-	public CommandDefinition(String name, CommandHandler handler, CommandOptionDefinition... options) {
-		this.name = name;
-		this.handler = handler;
-		Collections.addAll(this.options, options);
+	public void addLegacy(String name) {
+		legacies.add(name);
 	}
 
 	public void addOption(CommandOptionDefinition option) {
@@ -44,35 +37,24 @@ public class CommandDefinition {
 		restrictions.remove(restriction);
 	}
 
-	public Optional<String[]> getAliases() {
-		return aliases;
-	}
-
-	public String getAliasesString(String commandPrefix) {
-		String ret = "";
-		if (aliases.isPresent()) {
-			for (String alias : aliases.get()) {
-				ret += ", ``" + commandPrefix + alias + "``";
-			}
-		}
-
-		return ret;
+	public String getDescription() {
+		return description;
 	}
 
 	public CommandHandler getHandler() {
 		return handler;
 	}
 
-	public Optional<String> getHelp() {
-		return help;
-	}
-
-	public String getName() {
-		return name;
+	public List<String> getLegacies() {
+		return legacies;
 	}
 
 	public List<CommandOptionDefinition> getOptions() {
 		return options;
+	}
+
+	public String getPath() {
+		return path;
 	}
 
 	public EnumSet<CommandRestriction> getRestrictions() {
@@ -81,14 +63,6 @@ public class CommandDefinition {
 
 	public boolean hasRestriction(CommandRestriction restriction) {
 		return restrictions.contains(restriction);
-	}
-
-	public void setAliases(Optional<String[]> aliases) {
-		this.aliases = aliases;
-	}
-
-	public void setHelp(Optional<String> help) {
-		this.help = help;
 	}
 
 	public void setRestriction(CommandRestriction restriction) {

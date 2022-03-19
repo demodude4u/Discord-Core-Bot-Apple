@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 public final class DCBA {
 
 	public static interface Builder {
-		CommandBuilder addCommand(String command, CommandHandler handler);
+		CommandBuilder addCommand(String path, String description, CommandHandler handler);
 
 		Builder addReactionWatcher(ReactionWatcher watcher);
 
@@ -22,12 +22,12 @@ public final class DCBA {
 			return addReactionWatcher((ReactionWatcher) watcher);
 		}
 
-		default CommandBuilder addSimpleCommand(String command, SimpleEmbedResponse handler) {
-			return addCommand(command, handler);
+		default CommandBuilder addSimpleCommand(String path, String description, SimpleEmbedResponse handler) {
+			return addCommand(path, description, handler);
 		}
 
-		default CommandBuilder addSimpleCommand(String command, SimpleResponse handler) {
-			return addCommand(command, handler);
+		default CommandBuilder addSimpleCommand(String path, String description, SimpleResponse handler) {
+			return addCommand(path, description, handler);
 		}
 
 		Builder addTextWatcher(TextWatcher watcher);
@@ -58,12 +58,12 @@ public final class DCBA {
 		}
 
 		@Override
-		public CommandBuilder addCommand(String name, CommandHandler handler) {
+		public CommandBuilder addCommand(String name, String description, CommandHandler handler) {
 			if (command != null) {
 				bot.addCommand(command);
 				command = null;
 			}
-			command = new CommandDefinition(name, handler);
+			command = new CommandDefinition(name, description, handler);
 			return this;
 		}
 
@@ -122,12 +122,6 @@ public final class DCBA {
 		}
 
 		@Override
-		public CommandBuilder withAliases(String... aliases) {
-			command.setAliases(Optional.of(aliases));
-			return this;
-		}
-
-		@Override
 		public Builder withCommandPrefix(String commandPrefix) {
 			bot.setCommandPrefix(Optional.of(commandPrefix));
 			return this;
@@ -152,15 +146,17 @@ public final class DCBA {
 		}
 
 		@Override
-		public CommandBuilder withHelp(String description) {
-			command.setHelp(Optional.of(description));
+		public InfoBuilder withInvite(Permission... permissions) {
+			bot.getInfo().setAllowInvite(true);
+			bot.getInfo().setInvitePermissions(permissions);
 			return this;
 		}
 
 		@Override
-		public InfoBuilder withInvite(Permission... permissions) {
-			bot.getInfo().setAllowInvite(true);
-			bot.getInfo().setInvitePermissions(permissions);
+		public CommandBuilder withLegacy(String... names) {
+			for (String name : names) {
+				command.addLegacy(name);
+			}
 			return this;
 		}
 
@@ -208,9 +204,7 @@ public final class DCBA {
 
 		CommandBuilder privateChannelOnly();
 
-		CommandBuilder withAliases(String... aliases);
-
-		CommandBuilder withHelp(String description);
+		CommandBuilder withLegacy(String... names);
 
 		CommandBuilder withOptionalParam(OptionType type, String name, String description);
 
