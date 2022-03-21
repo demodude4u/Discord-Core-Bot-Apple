@@ -2,13 +2,13 @@ package com.demod.dcba;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 
-public class CommandOptionDefinition {
+public class SlashCommandOptionDefinition {
 	private final OptionType type;
 	private final String name;
 	private final String description;
 	private final boolean required;
 
-	public CommandOptionDefinition(OptionType type, String name, String description, boolean required) {
+	public SlashCommandOptionDefinition(OptionType type, String name, String description, boolean required) {
 		this.type = type;
 		this.name = name;
 		this.description = description;

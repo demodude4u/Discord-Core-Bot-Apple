@@ -1,6 +1,7 @@
 package com.demod.dcba;
 
-@FunctionalInterface
 public interface ExceptionHandler {
-	void handleException(CommandDefinition command, CommandEvent event, Exception e);
+	void handleMessageCommandException(MessageCommandDefinition command, MessageCommandEvent event, Exception e);
+
+	void handleSlashCommandException(SlashCommandDefinition command, SlashCommandEvent event, Exception e);
 }

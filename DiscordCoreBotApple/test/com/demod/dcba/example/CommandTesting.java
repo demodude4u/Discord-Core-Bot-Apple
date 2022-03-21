@@ -7,6 +7,7 @@ import com.demod.dcba.DCBA;
 import com.demod.dcba.DiscordBot;
 import com.google.common.util.concurrent.Uninterruptibles;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 
 public class CommandTesting {
@@ -16,21 +17,22 @@ public class CommandTesting {
 				.withCommandPrefix("!")//
 				//
 				//
-				.addSimpleCommand("params", "The bot will recite the parameters that are recognized.",
-						(event, embed) -> {
-							event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
-							event.optParamGuildChannel("channel")
-									.ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
-							event.optParamLong("integer").ifPresent(o -> embed.addField("integer", "" + o, true));
-							event.optParamMentionable("mentionable")
-									.ifPresent(o -> embed.addField("mentionable", "" + o.getAsMention(), true));
-							event.optParamDouble("number").ifPresent(o -> embed.addField("number", "" + o, true));
-							event.optParamRole("role").ifPresent(o -> embed.addField("role", "" + o.getName(), true));
-							event.optParamString("string").ifPresent(o -> embed.addField("string", "" + o, true));
-							event.optParamUser("user").ifPresent(o -> embed.addField("user", "" + o.getName(), true));
-							event.optParamAttachment("attachment")
-									.ifPresent(o -> embed.addField("attachment", "" + o.getUrl(), true));
-						})//
+				.addSlashCommand("params", "The bot will recite the parameters that are recognized.", event -> {
+					EmbedBuilder embed = new EmbedBuilder();
+					event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
+					event.optParamGuildChannel("channel")
+							.ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
+					event.optParamLong("integer").ifPresent(o -> embed.addField("integer", "" + o, true));
+					event.optParamMentionable("mentionable")
+							.ifPresent(o -> embed.addField("mentionable", "" + o.getAsMention(), true));
+					event.optParamDouble("number").ifPresent(o -> embed.addField("number", "" + o, true));
+					event.optParamRole("role").ifPresent(o -> embed.addField("role", "" + o.getName(), true));
+					event.optParamString("string").ifPresent(o -> embed.addField("string", "" + o, true));
+					event.optParamUser("user").ifPresent(o -> embed.addField("user", "" + o.getName(), true));
+					event.optParamAttachment("attachment")
+							.ifPresent(o -> embed.addField("attachment", "" + o.getUrl(), true));
+					event.replyEmbed(embed.build());
+				})//
 				.withOptionalParam(OptionType.BOOLEAN, "boolean", "description")//
 				.withOptionalParam(OptionType.CHANNEL, "channel", "description")//
 				.withOptionalParam(OptionType.INTEGER, "integer", "description")//
@@ -42,15 +44,15 @@ public class CommandTesting {
 				.withOptionalParam(OptionType.ATTACHMENT, "attachment", "description")
 				//
 				//
-				.addSimpleCommand("busy", "Simulate a command that takes some time to finish.", event -> {
+				.addSlashCommand("busy", "Simulate a command that takes some time to finish.", event -> {
 					long seconds = event.getParamLong("seconds");
 					Uninterruptibles.sleepUninterruptibly(seconds, TimeUnit.SECONDS);
-					return "Waited " + seconds + " seconds!";
+					event.reply("Waited " + seconds + " seconds!");
 				})//
 				.withParam(OptionType.INTEGER, "seconds", "Seconds to wait before the command is completed.")
 				//
 				//
-				.addCommand("multi-reply", "Replies back with multiple messages.", event -> {
+				.addSlashCommand("multi-reply", "Replies back with multiple messages.", event -> {
 					String[] messages = event.getParamString("messages").split(",");
 					for (String message : messages) {
 						event.reply(message.trim());
@@ -59,9 +61,9 @@ public class CommandTesting {
 				.withParam(OptionType.STRING, "messages", "Comma delimited messages.")
 				//
 				//
-				.addSimpleCommand("path/test/command", "Command path test.", event -> "Success!")
-				.addSimpleCommand("path/test/command2", "Command path test.", event -> "Success!")
-				.addSimpleCommand("path/test2", "Command path test.", event -> "Success!")
+				.addSlashCommand("path/test/command", "Command path test.", event -> event.reply("Success!"))
+				.addSlashCommand("path/test/command2", "Command path test.", event -> event.reply("Success!"))
+				.addSlashCommand("path/test2", "Command path test.", event -> event.reply("Success!"))
 				//
 				//
 				.create();

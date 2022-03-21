@@ -3,10 +3,7 @@ package com.demod.dcba;
 import java.util.List;
 import java.util.Optional;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildChannel;
@@ -23,26 +20,24 @@ import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
-public class CommandEvent {
+public class SlashCommandEvent implements EventReply {
 
 	private final SlashCommandInteractionEvent event;
 	private final InteractionHook hook;
 	private final Interaction interaction;
+	private final boolean ephemeral;
 
 	private boolean replied = false;
 
-	public CommandEvent(SlashCommandInteractionEvent event, InteractionHook hook) {
+	public SlashCommandEvent(SlashCommandInteractionEvent event, InteractionHook hook, boolean ephemeral) {
 		this.event = event;
 		this.hook = hook;
+		this.ephemeral = ephemeral;
 		this.interaction = hook.getInteraction();
 	}
 
 	public Attachment getAttachment(String name) {
 		return event.getOption(name).getAsAttachment();
-	}
-
-	public User getAuthor() {
-		return interaction.getUser();
 	}
 
 	public ChannelType getChannelType() {
@@ -113,6 +108,15 @@ public class CommandEvent {
 		return event.getOption(name).getAsUser();
 	}
 
+	@Override
+	public User getReplyPrivateUser() {
+		return event.getUser();
+	}
+
+	public User getUser() {
+		return interaction.getUser();
+	}
+
 	public boolean hasReplied() {
 		return replied;
 	}
@@ -165,58 +169,22 @@ public class CommandEvent {
 		return Optional.ofNullable(event.getOption(name)).map(OptionMapping::getAsUser);
 	}
 
-	public void reply(List<String> responseSegments) {
-		MessageBuilder builder = new MessageBuilder();
-		for (String segment : responseSegments) {
-			if (builder.length() + segment.length() <= 2000) {
-				builder.append(segment);
-			} else {
-				if (!builder.isEmpty()) {
-					reply(builder.build());
-					builder = new MessageBuilder();
-				}
-				if (segment.length() > 2000) {
-					reply(segment);
-				} else {
-					builder.append(segment);
-				}
-			}
-		}
-		if (!builder.isEmpty()) {
-			reply(builder.build());
-		}
-	}
-
+	@Override
 	public Message reply(Message message) {
 		replied = true;
-		return hook.sendMessage(message).setEphemeral(false).complete();
+		return hook.sendMessage(message).setEphemeral(ephemeral).complete();
 	}
 
-	public void reply(String response) {
-//		int maxSizeWithSafety = DiscordConsts.MAX_MESSAGE_SIZE - 1;
-//		if (response.length() <= maxSizeWithSafety) {
-//			reply(new MessageBuilder(DiscordConsts.SAFETY_CHAR + response).build());
-//		} else {
-//			for (int i = 0; i < response.length(); i += maxSizeWithSafety) {
-//				reply(new MessageBuilder().append(DiscordConsts.SAFETY_CHAR
-//						+ response.substring(i, Math.min(i + maxSizeWithSafety, response.length()))).build());
-//			}
-//		}
-
-		for (Message message : new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE)) {
-			// reply(message);
-			replyEmbed(new EmbedBuilder().appendDescription(message.getContentRaw()).build());
-		}
-	}
-
-	public Message replyEmbed(MessageEmbed build) {
+	@Override
+	public Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds) {
 		replied = true;
-		return hook.sendMessageEmbeds(build).setEphemeral(false).complete();
+		return hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
 	}
 
+	@Override
 	public Message replyFile(byte[] data, String filename) {
 		replied = true;
-		return hook.sendFile(data, filename).setEphemeral(false).complete();
+		return hook.sendFile(data, filename).setEphemeral(ephemeral).complete();
 	}
 
 }
