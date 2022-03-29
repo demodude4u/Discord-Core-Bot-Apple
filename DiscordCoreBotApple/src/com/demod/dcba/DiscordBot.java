@@ -228,6 +228,9 @@ public class DiscordBot extends AbstractIdleService {
 				builder.addField("Total Servers", guildCount + " servers", true);
 				builder.addField("Uptime", uptimeFormatted, true);
 				builder.addField("Ping to Discord", ping + " ms", true);
+				for (Entry<String, String> entry : info.getCustomFields()) {
+					builder.addField(entry.getKey(), entry.getValue(), true);
+				}
 
 				event.replyEmbed(builder.build());
 			}

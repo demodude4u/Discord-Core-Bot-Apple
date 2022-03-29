@@ -190,6 +190,12 @@ public final class DCBA {
 		}
 
 		@Override
+		public InfoBuilder withCustomField(String label, String description) {
+			bot.getInfo().addCustomField(label, description);
+			return this;
+		}
+
+		@Override
 		public Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup) {
 			bot.setCustomSetup(customSetup);
 			return this;
@@ -235,6 +241,8 @@ public final class DCBA {
 
 	public static interface InfoBuilder extends Builder {
 		InfoBuilder withCredits(String group, String... names);
+
+		InfoBuilder withCustomField(String label, String description);
 
 		InfoBuilder withInvite(Permission... permissions);
 

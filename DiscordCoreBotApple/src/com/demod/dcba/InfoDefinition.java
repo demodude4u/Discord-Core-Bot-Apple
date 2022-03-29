@@ -1,9 +1,11 @@
 package com.demod.dcba;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import net.dv8tion.jda.api.Permission;
@@ -17,10 +19,15 @@ public class InfoDefinition {
 	private final List<String> technologies = new ArrayList<>();
 	private boolean allowInvite = false;
 	private Permission[] invitePermissions;
+	private final List<Entry<String, String>> customFields = new ArrayList<>();
 
 	public void addCredits(String group, String[] names) {
 		List<String> groupNames = credits.computeIfAbsent(group, k -> new ArrayList<>());
 		Collections.addAll(groupNames, names);
+	}
+
+	public void addCustomField(String label, String description) {
+		customFields.add(new SimpleEntry<>(label, description));
 	}
 
 	public void addTechnology(String name, Optional<String> version, String description) {
@@ -33,6 +40,10 @@ public class InfoDefinition {
 
 	public LinkedHashMap<String, List<String>> getCredits() {
 		return credits;
+	}
+
+	public List<Entry<String, String>> getCustomFields() {
+		return customFields;
 	}
 
 	public Permission[] getInvitePermissions() {
