@@ -1,8 +1,7 @@
 package com.demod.dcba;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-
-@FunctionalInterface
 public interface ExceptionHandler {
-	void handleException(CommandDefinition command, MessageReceivedEvent event, Exception e);
+	void handleMessageCommandException(MessageCommandDefinition command, MessageCommandEvent event, Exception e);
+
+	void handleSlashCommandException(SlashCommandDefinition command, SlashCommandEvent event, Exception e);
 }

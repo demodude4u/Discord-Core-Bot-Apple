@@ -1,5 +1,7 @@
 package com.demod.dcba;
 
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
@@ -12,7 +14,9 @@ public interface ReactionWatcher {
 			String response;
 			response = seenSimpleMessage(event);
 			if (response != null) {
-				DiscordUtils.replyTo(event.getChannel(), response);
+				new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE).forEach(m -> {
+					event.getChannel().sendMessage(m).complete();
+				});
 			}
 		}
 
