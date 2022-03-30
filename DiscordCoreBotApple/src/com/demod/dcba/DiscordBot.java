@@ -33,6 +33,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.PrivateChannel;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
@@ -138,7 +139,7 @@ public class DiscordBot extends AbstractIdleService {
 				commandData = Commands.slash(rootEntry.getKey(), commandDefinition.getDescription());
 				for (SlashCommandOptionDefinition option : commandDefinition.getOptions()) {
 					commandData = commandData.addOption(option.getType(), option.getName(), option.getDescription(),
-							option.isRequired());
+							option.isRequired(), option.isAutoComplete());
 				}
 			} else {
 				Map<String, Object> sub = (Map<String, Object>) rootEntry.getValue();
@@ -151,7 +152,7 @@ public class DiscordBot extends AbstractIdleService {
 								commandDefinition.getDescription());
 						for (SlashCommandOptionDefinition option : commandDefinition.getOptions()) {
 							subcommandData = subcommandData.addOption(option.getType(), option.getName(),
-									option.getDescription(), option.isRequired());
+									option.getDescription(), option.isRequired(), option.isAutoComplete());
 						}
 						commandData = commandData.addSubcommands(subcommandData);
 					} else {
@@ -164,7 +165,7 @@ public class DiscordBot extends AbstractIdleService {
 									subSubEntry.getValue().getDescription());
 							for (SlashCommandOptionDefinition option : subSubEntry.getValue().getOptions()) {
 								subcommandData = subcommandData.addOption(option.getType(), option.getName(),
-										option.getDescription(), option.isRequired());
+										option.getDescription(), option.isRequired(), option.isAutoComplete());
 							}
 							subcommandGroupData = subcommandGroupData.addSubcommands(subcommandData);
 						}
@@ -347,6 +348,16 @@ public class DiscordBot extends AbstractIdleService {
 		JDABuilder builder = JDABuilder.createDefault(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//
 				.addEventListeners(new ListenerAdapter() {
+					@Override
+					public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
+						SlashCommandDefinition commandDefinition = commandSlash.get(event.getCommandPath());
+						Optional<AutoCompleteHandler> autoCompleteHandler = commandDefinition.getAutoCompleteHandler();
+						if (autoCompleteHandler.isPresent()) {
+							AutoCompleteEvent autoCompleteEvent = new AutoCompleteEvent(event);
+							autoCompleteHandler.get().handleAutoComplete(autoCompleteEvent);
+						}
+					}
+
 					@Override
 					public void onMessageContextInteraction(MessageContextInteractionEvent event) {
 						MessageCommandDefinition commandDefinition = commandMessage.get(event.getName());

@@ -22,6 +22,9 @@ public final class DCBA {
 
 		SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler handler);
 
+		SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler commandhandler,
+				AutoCompleteHandler autoCompleteHandler);
+
 		Builder addTextWatcher(TextWatcher watcher);
 
 		default Builder addTextWatcher(TextWatcher.SimpleWatcher watcher) {
@@ -66,6 +69,12 @@ public final class DCBA {
 		@Override
 		public SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler handler) {
 			return builder.addSlashCommand(path, description, handler);
+		}
+
+		@Override
+		public SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler commandhandler,
+				AutoCompleteHandler autoCompleteHandler) {
+			return builder.addSlashCommand(path, description, commandhandler, autoCompleteHandler);
 		}
 
 		@Override
@@ -136,12 +145,24 @@ public final class DCBA {
 		}
 
 		@Override
-		public SlashCommandBuilder addSlashCommand(String name, String description, SlashCommandHandler handler) {
+		public SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler handler) {
 			if (slashCommandBuilder.command != null) {
 				bot.addCommand(slashCommandBuilder.command);
 				slashCommandBuilder.command = null;
 			}
-			slashCommandBuilder.command = new SlashCommandDefinition(name, description, handler);
+			slashCommandBuilder.command = new SlashCommandDefinition(path, description, handler);
+			return slashCommandBuilder;
+		}
+
+		@Override
+		public SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler commandhandler,
+				AutoCompleteHandler autoCompleteHandler) {
+			if (slashCommandBuilder.command != null) {
+				bot.addCommand(slashCommandBuilder.command);
+				slashCommandBuilder.command = null;
+			}
+			slashCommandBuilder.command = new SlashCommandDefinition(path, description, commandhandler,
+					autoCompleteHandler);
 			return slashCommandBuilder;
 		}
 
@@ -310,7 +331,11 @@ public final class DCBA {
 
 		SlashCommandBuilder privateChannelOnly();
 
+		SlashCommandBuilder withAutoParam(OptionType type, String name, String description);
+
 		SlashCommandBuilder withLegacyWarning(String... names);
+
+		SlashCommandBuilder withOptionalAutoParam(OptionType type, String name, String description);
 
 		SlashCommandBuilder withOptionalParam(OptionType type, String name, String description);
 
@@ -352,6 +377,12 @@ public final class DCBA {
 		}
 
 		@Override
+		public SlashCommandBuilder withAutoParam(OptionType type, String name, String description) {
+			command.addOption(new SlashCommandOptionDefinition(type, name, description, true, true));
+			return this;
+		}
+
+		@Override
 		public SlashCommandBuilder withLegacyWarning(String... names) {
 			for (String name : names) {
 				command.addLegacy(name);
@@ -360,14 +391,20 @@ public final class DCBA {
 		}
 
 		@Override
+		public SlashCommandBuilder withOptionalAutoParam(OptionType type, String name, String description) {
+			command.addOption(new SlashCommandOptionDefinition(type, name, description, false, true));
+			return this;
+		}
+
+		@Override
 		public SlashCommandBuilder withOptionalParam(OptionType type, String name, String description) {
-			command.addOption(new SlashCommandOptionDefinition(type, name, description, false));
+			command.addOption(new SlashCommandOptionDefinition(type, name, description, false, false));
 			return this;
 		}
 
 		@Override
 		public SlashCommandBuilder withParam(OptionType type, String name, String description) {
-			command.addOption(new SlashCommandOptionDefinition(type, name, description, true));
+			command.addOption(new SlashCommandOptionDefinition(type, name, description, true, false));
 			return this;
 		}
 

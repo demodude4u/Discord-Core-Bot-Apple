@@ -7,12 +7,15 @@ public class SlashCommandOptionDefinition {
 	private final String name;
 	private final String description;
 	private final boolean required;
+	private final boolean autoComplete;
 
-	public SlashCommandOptionDefinition(OptionType type, String name, String description, boolean required) {
+	public SlashCommandOptionDefinition(OptionType type, String name, String description, boolean required,
+			boolean autoComplete) {
 		this.type = type;
 		this.name = name;
 		this.description = description;
 		this.required = required;
+		this.autoComplete = autoComplete;
 	}
 
 	public String getDescription() {
@@ -25,6 +28,10 @@ public class SlashCommandOptionDefinition {
 
 	public OptionType getType() {
 		return type;
+	}
+
+	public boolean isAutoComplete() {
+		return autoComplete;
 	}
 
 	public boolean isRequired() {

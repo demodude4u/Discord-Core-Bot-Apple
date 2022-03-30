@@ -1,10 +1,14 @@
 package com.demod.dcba.example;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import com.demod.dcba.DCBA;
 import com.demod.dcba.DiscordBot;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Uninterruptibles;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -64,6 +68,19 @@ public class CommandTesting {
 				.addSlashCommand("path/test/command", "Command path test.", event -> event.reply("Success!"))
 				.addSlashCommand("path/test/command2", "Command path test.", event -> event.reply("Success!"))
 				.addSlashCommand("path/test2", "Command path test.", event -> event.reply("Success!"))
+				//
+				//
+				.addSlashCommand("autocomplete/range", "Suggest numbers near what you entered.",
+						event -> event.reply("Number: " + event.getParamLong("number")), event -> {
+							Optional<Long> number = event.optParamLong("number");
+							if (number.isPresent()) {
+								event.replyIntegers(LongStream.rangeClosed(number.get() - 5, number.get() + 5).boxed()
+										.collect(Collectors.toList()));
+							} else {
+								event.replyIntegers(ImmutableList.of());
+							}
+						})//
+				.withAutoParam(OptionType.INTEGER, "number", "Number to auto-complete about.")
 				//
 				//
 				.create();

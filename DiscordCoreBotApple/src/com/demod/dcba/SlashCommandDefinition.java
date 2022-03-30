@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 
 public class SlashCommandDefinition {
 	public enum Restriction {
@@ -13,16 +14,23 @@ public class SlashCommandDefinition {
 	private final String path;
 	private final String description;
 	private final SlashCommandHandler handler;
+	private final Optional<AutoCompleteHandler> autoCompleteHandler;
 	private final List<SlashCommandOptionDefinition> options = new ArrayList<>();
 	private final List<String> legacies = new ArrayList<>();
 	private final EnumSet<Restriction> restrictions = EnumSet.noneOf(Restriction.class);
 
 	public SlashCommandDefinition(String path, String description, SlashCommandHandler handler,
-			SlashCommandOptionDefinition... options) {
+			AutoCompleteHandler autoCompleteHandler, SlashCommandOptionDefinition... options) {
 		this.path = path;
 		this.description = description;
 		this.handler = handler;
+		this.autoCompleteHandler = Optional.ofNullable(autoCompleteHandler);
 		Collections.addAll(this.options, options);
+	}
+
+	public SlashCommandDefinition(String path, String description, SlashCommandHandler handler,
+			SlashCommandOptionDefinition... options) {
+		this(path, description, handler, null, options);
 	}
 
 	public void addLegacy(String name) {
@@ -35,6 +43,10 @@ public class SlashCommandDefinition {
 
 	public void clearRestriction(Restriction restriction) {
 		restrictions.remove(restriction);
+	}
+
+	public Optional<AutoCompleteHandler> getAutoCompleteHandler() {
+		return autoCompleteHandler;
 	}
 
 	public String getDescription() {
