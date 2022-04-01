@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class SlashCommandDefinition {
-	public enum Restriction {
-		ADMIN_ONLY, PRIVATE_CHANNEL_ONLY, GUILD_CHANNEL_ONLY, EPHEMERAL
-	}
 
 	private final String path;
 	private final String description;
@@ -17,7 +14,7 @@ public class SlashCommandDefinition {
 	private final Optional<AutoCompleteHandler> autoCompleteHandler;
 	private final List<SlashCommandOptionDefinition> options = new ArrayList<>();
 	private final List<String> legacies = new ArrayList<>();
-	private final EnumSet<Restriction> restrictions = EnumSet.noneOf(Restriction.class);
+	private final EnumSet<CommandRestriction> restrictions = EnumSet.noneOf(CommandRestriction.class);
 
 	public SlashCommandDefinition(String path, String description, SlashCommandHandler handler,
 			AutoCompleteHandler autoCompleteHandler, SlashCommandOptionDefinition... options) {
@@ -41,7 +38,7 @@ public class SlashCommandDefinition {
 		options.add(option);
 	}
 
-	public void clearRestriction(Restriction restriction) {
+	public void clearRestriction(CommandRestriction restriction) {
 		restrictions.remove(restriction);
 	}
 
@@ -69,15 +66,15 @@ public class SlashCommandDefinition {
 		return path;
 	}
 
-	public EnumSet<Restriction> getRestrictions() {
+	public EnumSet<CommandRestriction> getRestrictions() {
 		return restrictions;
 	}
 
-	public boolean hasRestriction(Restriction restriction) {
+	public boolean hasRestriction(CommandRestriction restriction) {
 		return restrictions.contains(restriction);
 	}
 
-	public void setRestriction(Restriction restriction) {
+	public void setRestriction(CommandRestriction restriction) {
 		restrictions.add(restriction);
 	}
 }

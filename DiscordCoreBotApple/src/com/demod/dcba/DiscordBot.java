@@ -2,6 +2,8 @@ package com.demod.dcba;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -20,7 +22,6 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.demod.dcba.SlashCommandDefinition.Restriction;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -32,7 +33,9 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.PrivateChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -44,6 +47,9 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
@@ -77,6 +83,9 @@ public class DiscordBot extends AbstractIdleService {
 	private final LocalDateTime botStarted = LocalDateTime.now();
 
 	private Function<JDABuilder, JDABuilder> customSetup = null;
+
+	private Optional<String> reportingUserID = Optional.empty();
+	private Optional<String> reportingChannelID = Optional.empty();
 
 	DiscordBot() {
 		configJson = loadConfig();
@@ -184,7 +193,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	private boolean checkPermitted(MessageChannel channel, Member member, SlashCommandDefinition commandDefinition) {
 		boolean isPermitted = true;
-		if (commandDefinition.hasRestriction(Restriction.ADMIN_ONLY)) {
+		if (commandDefinition.hasRestriction(CommandRestriction.ADMIN_ONLY)) {
 			if (member != null) {
 				isPermitted = member.hasPermission(Permission.ADMINISTRATOR);
 			} else {
@@ -192,12 +201,13 @@ public class DiscordBot extends AbstractIdleService {
 			}
 		}
 
-		if (channel.getType() != ChannelType.TEXT && commandDefinition.hasRestriction(Restriction.GUILD_CHANNEL_ONLY)) {
+		if (channel.getType() != ChannelType.TEXT
+				&& commandDefinition.hasRestriction(CommandRestriction.GUILD_CHANNEL_ONLY)) {
 			isPermitted = false;
 		}
 
 		if (channel.getType() != ChannelType.PRIVATE
-				&& commandDefinition.hasRestriction(Restriction.PRIVATE_CHANNEL_ONLY)) {
+				&& commandDefinition.hasRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY)) {
 			isPermitted = false;
 		}
 
@@ -236,6 +246,27 @@ public class DiscordBot extends AbstractIdleService {
 				event.replyEmbed(builder.build());
 			}
 		});
+	}
+
+	private CommandReporting createReporting(CommandInteractionPayload event) {
+		String author;
+		if (event.getChannelType() == ChannelType.PRIVATE) {
+			author = event.getUser().getName();
+		} else {
+			author = event.getGuild().getName() + " / #" + event.getMessageChannel().getName() + " / "
+					+ event.getUser().getName();
+		}
+
+		String authorIconURL = event.getUser().getEffectiveAvatarUrl();
+
+		String command = event.getCommandString();
+		for (OptionMapping optionMapping : event.getOptions()) {
+			if (optionMapping.getType() == OptionType.ATTACHMENT) {
+				command += " " + optionMapping.getAsAttachment().getUrl();
+			}
+		}
+
+		return new CommandReporting(author, authorIconURL, command);
 	}
 
 	public Optional<String> getCommandPrefix() {
@@ -361,20 +392,25 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onMessageContextInteraction(MessageContextInteractionEvent event) {
 						MessageCommandDefinition commandDefinition = commandMessage.get(event.getName());
-						boolean ephemeral = commandDefinition
-								.hasRestriction(MessageCommandDefinition.Restriction.EPHEMERAL);
+						boolean ephemeral = commandDefinition.hasRestriction(CommandRestriction.EPHEMERAL);
 
+						CommandReporting reporting = createReporting(event);
 						InteractionHook hook = event.deferReply(ephemeral).complete();
-						MessageCommandEvent commandEvent = new MessageCommandEvent(event, hook, ephemeral);
+						MessageCommandEvent commandEvent = new MessageCommandEvent(event, reporting, hook, ephemeral);
 
 						commandService.submit(() -> {
 							try {
 								commandDefinition.getHandler().handleCommand(commandEvent);
 							} catch (Exception e) {
+								reporting.addException(e);
 								exceptionHandler.handleMessageCommandException(commandDefinition, commandEvent, e);
 							} finally {
 								if (!commandEvent.hasReplied()) {
 									hook.deleteOriginal().complete();
+								}
+
+								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
+									submitReport(reporting);
 								}
 							}
 						});
@@ -472,20 +508,25 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
 						SlashCommandDefinition commandDefinition = commandSlash.get(event.getCommandPath());
-						boolean ephemeral = commandDefinition
-								.hasRestriction(SlashCommandDefinition.Restriction.EPHEMERAL);
+						boolean ephemeral = commandDefinition.hasRestriction(CommandRestriction.EPHEMERAL);
 
+						CommandReporting reporting = createReporting(event);
 						InteractionHook hook = event.deferReply(ephemeral).complete();
-						SlashCommandEvent commandEvent = new SlashCommandEvent(event, hook, ephemeral);
+						SlashCommandEvent commandEvent = new SlashCommandEvent(event, reporting, hook, ephemeral);
 
 						commandService.submit(() -> {
 							try {
 								commandDefinition.getHandler().handleCommand(commandEvent);
 							} catch (Exception e) {
+								reporting.addException(e);
 								exceptionHandler.handleSlashCommandException(commandDefinition, commandEvent, e);
 							} finally {
 								if (!commandEvent.hasReplied()) {
 									hook.deleteOriginal().complete();
+								}
+
+								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
+									submitReport(reporting);
 								}
 							}
 						});
@@ -496,6 +537,9 @@ public class DiscordBot extends AbstractIdleService {
 		}
 		jda = builder.build().awaitReady();
 		jda.setRequiredScopes("bot", "applications.commands");
+
+		reportingUserID = Optional.ofNullable(configJson.optString("reporting_user_id", null));
+		reportingChannelID = Optional.ofNullable(configJson.optString("reporting_channel_id", null));
 
 		if (configJson.has("debug_guild_commands")) {
 			String guildId = configJson.getString("debug_guild_commands");
@@ -508,5 +552,41 @@ public class DiscordBot extends AbstractIdleService {
 		CommandListUpdateAction updateCommands = jda.updateCommands();
 		buildUpdateCommands(updateCommands);
 		updateCommands.queue();
+	}
+
+	private void submitReport(CommandReporting reporting) {
+		try {
+			List<MessageEmbed> embeds = reporting.createEmbeds();
+
+			if (reportingUserID.isPresent()) {
+				PrivateChannel privateChannel = jda.openPrivateChannelById(reportingUserID.get()).complete();
+				for (MessageEmbed embed : embeds) {
+					privateChannel.sendMessageEmbeds(embed).complete();
+				}
+			}
+
+			if (reportingChannelID.isPresent()) {
+				TextChannel textChannel = jda.getTextChannelById(reportingChannelID.get());
+				if (textChannel != null) {
+					for (MessageEmbed embed : embeds) {
+						textChannel.sendMessageEmbeds(embed).complete();
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			if (reportingUserID.isPresent()) {
+				PrivateChannel privateChannel = jda.openPrivateChannelById(reportingUserID.get()).complete();
+				privateChannel.sendMessage("Failed to create report!").complete();
+				try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
+					e.printStackTrace();
+					e.printStackTrace(pw);
+					pw.flush();
+					privateChannel.sendFile(sw.toString().getBytes(), "Exception.txt").complete();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+		}
 	}
 }

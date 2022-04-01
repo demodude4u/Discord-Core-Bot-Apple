@@ -284,6 +284,8 @@ public final class DCBA {
 		MessageCommandBuilder guildChannelOnly();
 
 		MessageCommandBuilder privateChannelOnly();
+
+		MessageCommandBuilder withoutReporting();
 	}
 
 	private static class MessageCommandBuilderImpl extends BuilderDeferred implements MessageCommandBuilder {
@@ -296,27 +298,33 @@ public final class DCBA {
 
 		@Override
 		public MessageCommandBuilder adminOnly() {
-			command.setRestriction(MessageCommandDefinition.Restriction.ADMIN_ONLY);
+			command.setRestriction(CommandRestriction.ADMIN_ONLY);
 			return this;
 		}
 
 		@Override
 		public MessageCommandBuilder ephemeral() {
-			command.setRestriction(MessageCommandDefinition.Restriction.EPHEMERAL);
+			command.setRestriction(CommandRestriction.EPHEMERAL);
 			return this;
 		}
 
 		@Override
 		public MessageCommandBuilder guildChannelOnly() {
-			command.setRestriction(MessageCommandDefinition.Restriction.GUILD_CHANNEL_ONLY);
-			command.clearRestriction(MessageCommandDefinition.Restriction.PRIVATE_CHANNEL_ONLY);
+			command.setRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+			command.clearRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
 			return this;
 		}
 
 		@Override
 		public MessageCommandBuilder privateChannelOnly() {
-			command.setRestriction(MessageCommandDefinition.Restriction.PRIVATE_CHANNEL_ONLY);
-			command.clearRestriction(MessageCommandDefinition.Restriction.GUILD_CHANNEL_ONLY);
+			command.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
+			command.clearRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+			return this;
+		}
+
+		@Override
+		public MessageCommandBuilder withoutReporting() {
+			command.setRestriction(CommandRestriction.NO_REPORTING);
 			return this;
 		}
 
@@ -339,6 +347,8 @@ public final class DCBA {
 
 		SlashCommandBuilder withOptionalParam(OptionType type, String name, String description);
 
+		SlashCommandBuilder withoutReporting();
+
 		SlashCommandBuilder withParam(OptionType type, String name, String description);
 	}
 
@@ -352,27 +362,27 @@ public final class DCBA {
 
 		@Override
 		public SlashCommandBuilder adminOnly() {
-			command.setRestriction(SlashCommandDefinition.Restriction.ADMIN_ONLY);
+			command.setRestriction(CommandRestriction.ADMIN_ONLY);
 			return this;
 		}
 
 		@Override
 		public SlashCommandBuilder ephemeral() {
-			command.setRestriction(SlashCommandDefinition.Restriction.EPHEMERAL);
+			command.setRestriction(CommandRestriction.EPHEMERAL);
 			return this;
 		}
 
 		@Override
 		public SlashCommandBuilder guildChannelOnly() {
-			command.setRestriction(SlashCommandDefinition.Restriction.GUILD_CHANNEL_ONLY);
-			command.clearRestriction(SlashCommandDefinition.Restriction.PRIVATE_CHANNEL_ONLY);
+			command.setRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
+			command.clearRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
 			return this;
 		}
 
 		@Override
 		public SlashCommandBuilder privateChannelOnly() {
-			command.setRestriction(SlashCommandDefinition.Restriction.PRIVATE_CHANNEL_ONLY);
-			command.clearRestriction(SlashCommandDefinition.Restriction.GUILD_CHANNEL_ONLY);
+			command.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
+			command.clearRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
 			return this;
 		}
 
@@ -399,6 +409,12 @@ public final class DCBA {
 		@Override
 		public SlashCommandBuilder withOptionalParam(OptionType type, String name, String description) {
 			command.addOption(new SlashCommandOptionDefinition(type, name, description, false, false));
+			return this;
+		}
+
+		@Override
+		public SlashCommandBuilder withoutReporting() {
+			command.setRestriction(CommandRestriction.NO_REPORTING);
 			return this;
 		}
 

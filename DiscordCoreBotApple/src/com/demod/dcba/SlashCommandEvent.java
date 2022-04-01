@@ -16,15 +16,18 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 
 	private final SlashCommandInteractionEvent event;
+	private final CommandReporting reporting;
 	private final InteractionHook hook;
 	private final Interaction interaction;
 	private final boolean ephemeral;
 
 	private boolean replied = false;
 
-	public SlashCommandEvent(SlashCommandInteractionEvent event, InteractionHook hook, boolean ephemeral) {
+	public SlashCommandEvent(SlashCommandInteractionEvent event, CommandReporting reporting, InteractionHook hook,
+			boolean ephemeral) {
 		super(event);
 		this.event = event;
+		this.reporting = reporting;
 		this.hook = hook;
 		this.ephemeral = ephemeral;
 		this.interaction = hook.getInteraction();
@@ -63,6 +66,10 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 		return event.getUser();
 	}
 
+	public CommandReporting getReporting() {
+		return reporting;
+	}
+
 	public User getUser() {
 		return interaction.getUser();
 	}
@@ -78,19 +85,25 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 	@Override
 	public Message reply(Message message) {
 		replied = true;
-		return hook.sendMessage(message).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendMessage(message).setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 	@Override
 	public Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds) {
 		replied = true;
-		return hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 	@Override
 	public Message replyFile(byte[] data, String filename) {
 		replied = true;
-		return hook.sendFile(data, filename).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendFile(data, filename).setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 }

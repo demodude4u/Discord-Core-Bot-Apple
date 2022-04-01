@@ -15,13 +15,16 @@ import net.dv8tion.jda.api.interactions.commands.context.MessageContextInteracti
 public class MessageCommandEvent implements EventReply {
 
 	private final MessageContextInteractionEvent event;
+	private final CommandReporting reporting;
 	private final InteractionHook hook;
 	private final boolean ephemeral;
 
 	private boolean replied = false;
 
-	public MessageCommandEvent(MessageContextInteractionEvent event, InteractionHook hook, boolean ephemeral) {
+	public MessageCommandEvent(MessageContextInteractionEvent event, CommandReporting reporting, InteractionHook hook,
+			boolean ephemeral) {
 		this.event = event;
+		this.reporting = reporting;
 		this.hook = hook;
 		this.ephemeral = ephemeral;
 	}
@@ -63,6 +66,10 @@ public class MessageCommandEvent implements EventReply {
 		return event.getUser();
 	}
 
+	public CommandReporting getReporting() {
+		return reporting;
+	}
+
 	public User getUser() {
 		return event.getUser();
 	}
@@ -78,19 +85,25 @@ public class MessageCommandEvent implements EventReply {
 	@Override
 	public Message reply(Message message) {
 		replied = true;
-		return hook.sendMessage(message).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendMessage(message).setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 	@Override
 	public Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds) {
 		replied = true;
-		return hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 	@Override
 	public Message replyFile(byte[] data, String filename) {
 		replied = true;
-		return hook.sendFile(data, filename).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendFile(data, filename).setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 }

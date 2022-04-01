@@ -1,5 +1,6 @@
 package com.demod.dcba;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -37,11 +38,13 @@ public interface EventReply {
 
 	Message reply(Message message);
 
-	default void reply(String response) {
+	default List<Message> reply(String response) {
+		List<Message> ret = new ArrayList<>();
 		for (Message message : new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE)) {
 			// reply(message);
-			replyEmbed(new EmbedBuilder().appendDescription(message.getContentRaw()).build());
+			ret.add(replyEmbed(new EmbedBuilder().appendDescription(message.getContentRaw()).build()));
 		}
+		return ret;
 	}
 
 	Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds);

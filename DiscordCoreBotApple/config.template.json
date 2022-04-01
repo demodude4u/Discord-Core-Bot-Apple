@@ -1,6 +1,9 @@
 {
     "discord": {
         "bot_token": "",
-        "command_prefix": "!"
+        "command_prefix": "!",
+        "reporting_user_id": "",
+        "reporting_channel_id": "",
+        "debug_guild_commands": ""
     }
 }
