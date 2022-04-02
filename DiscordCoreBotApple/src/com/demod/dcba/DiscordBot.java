@@ -554,7 +554,7 @@ public class DiscordBot extends AbstractIdleService {
 		updateCommands.queue();
 	}
 
-	private void submitReport(CommandReporting reporting) {
+	public synchronized void submitReport(CommandReporting reporting) {
 		try {
 			List<MessageEmbed> embeds = reporting.createEmbeds();
 
