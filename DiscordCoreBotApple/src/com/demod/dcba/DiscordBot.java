@@ -103,7 +103,7 @@ public class DiscordBot extends AbstractIdleService {
 			}
 
 			@Override
-			public void handleSlashCommandException(SlashCommandDefinition command, SlashCommandEvent event,
+			public void handleSlashCommandException(SlashCommandDefinition command, EventReply event,
 					Exception e) {
 				e.printStackTrace();
 				event.reply("Unhandled Error: [" + e.getClass().getSimpleName() + "] "

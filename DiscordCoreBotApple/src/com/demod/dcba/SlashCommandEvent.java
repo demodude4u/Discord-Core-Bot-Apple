@@ -66,6 +66,7 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 		return event.getUser();
 	}
 
+	@Override
 	public CommandReporting getReporting() {
 		return reporting;
 	}

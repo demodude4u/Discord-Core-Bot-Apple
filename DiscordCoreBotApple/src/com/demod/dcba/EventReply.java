@@ -14,6 +14,8 @@ public interface EventReply {
 
 	User getReplyPrivateUser();
 
+	CommandReporting getReporting();
+
 	default void reply(List<String> responseSegments) {
 		StringBuilder builder = new StringBuilder();
 		for (String segment : responseSegments) {
@@ -50,6 +52,12 @@ public interface EventReply {
 	Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds);
 
 	Message replyFile(byte[] data, String filename);
+
+	default public void replyIfNoException(String response) {
+		if (getReporting().getExceptions().isEmpty()) {
+			reply(response);
+		}
+	}
 
 	default void replyPrivate(List<String> responseSegments) {
 		StringBuilder builder = new StringBuilder();
