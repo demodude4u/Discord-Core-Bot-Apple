@@ -36,9 +36,10 @@ public class CommandReporting {
 
 	private final String author;
 	private final String authorIconURL;
-	private final String command;
 	private final Instant commandStart;
 
+	private String command = null;
+	private String imageURL = null;
 	private Level level = Level.INFO;
 	private final List<Message> replies = new ArrayList<>();
 	private final List<String> warnings = new ArrayList<>();
@@ -46,11 +47,15 @@ public class CommandReporting {
 	private final List<Exception> exceptions = new ArrayList<>();
 	private final List<Field> fields = new ArrayList<>();
 
-	public CommandReporting(String author, String authorIconURL, String command) {
+	public CommandReporting(String author, String authorIconURL) {
 		this.author = author;
 		this.authorIconURL = authorIconURL;
-		this.command = command;
 		this.commandStart = Instant.now();
+	}
+
+	public CommandReporting(String author, String authorIconURL, String command) {
+		this(author, authorIconURL);
+		this.command = command;
 	}
 
 	public void addDebug(String message) {
@@ -85,7 +90,9 @@ public class CommandReporting {
 			builder.setColor(level.getColor());
 		}
 
-		builder.addField("Command", limitContent(1000, command), false);
+		if (command != null) {
+			builder.addField("Command", limitContent(1000, command), false);
+		}
 
 		Duration responseTime = Duration.between(commandStart, Instant.now());
 		builder.addField("Response Time", responseTime.toMillis() + "ms", true);
@@ -124,8 +131,12 @@ public class CommandReporting {
 					false);
 		}
 
-		replies.stream().flatMap(m -> m.getEmbeds().stream()).filter(e -> e.getImage() != null)
-				.map(e -> e.getImage().getUrl()).findFirst().ifPresent(builder::setImage);
+		if (imageURL != null) {
+			builder.setImage(imageURL);
+		} else {
+			replies.stream().flatMap(m -> m.getEmbeds().stream()).filter(e -> e.getImage() != null)
+					.map(e -> e.getImage().getUrl()).findFirst().ifPresent(builder::setImage);
+		}
 
 		if (builder.isValidLength()) {
 			return ImmutableList.of(builder.build());
@@ -157,6 +168,14 @@ public class CommandReporting {
 		}
 	}
 
+	public List<Exception> getExceptions() {
+		return exceptions;
+	}
+
+	public Level getLevel() {
+		return level;
+	}
+
 	private String joinUnique(List<String> messages) {
 		Multiset<String> unique = LinkedHashMultiset.create(messages);
 		return unique.entrySet().stream()
@@ -174,6 +193,14 @@ public class CommandReporting {
 
 	public void setAttention() {
 		elevateLevel(Level.ATTENTION);
+	}
+
+	public void setCommand(String command) {
+		this.command = command;
+	}
+
+	public void setImageURL(String imageURL) {
+		this.imageURL = imageURL;
 	}
 
 	public void setLevel(Level level) {

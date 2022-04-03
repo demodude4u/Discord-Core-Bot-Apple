@@ -1,5 +1,6 @@
 package com.demod.dcba;
 
+import java.awt.Color;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -60,6 +61,7 @@ import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 public class DiscordBot extends AbstractIdleService {
 
 	private static final String COMMAND_INFO = "info";
+	private static final String COMMAND_FEEDBACK = "feedback";
 
 	private final Map<String, MessageCommandDefinition> commandMessage = new LinkedHashMap<>();
 	private final Map<String, SlashCommandDefinition> commandSlash = new LinkedHashMap<>();
@@ -214,6 +216,23 @@ public class DiscordBot extends AbstractIdleService {
 		return isPermitted;
 	}
 
+	private SlashCommandDefinition createCommandFeedback() {
+		SlashCommandDefinition command = new SlashCommandDefinition(COMMAND_FEEDBACK,
+				"Send feedback or ideas to my developer!", new SlashCommandHandler() {
+					@Override
+					public void handleCommand(SlashCommandEvent event) throws Exception {
+						event.getReporting().setAttention();
+						event.reply("Thank you for your feedback!");
+					}
+				});
+		command.addOption(
+				new SlashCommandOptionDefinition(OptionType.STRING, "feedback", "The feedback details.", true, false));
+		command.addOption(new SlashCommandOptionDefinition(OptionType.ATTACHMENT, "attachment",
+				"Any file along with the feedback.", false, false));
+		command.setRestriction(CommandRestriction.EPHEMERAL);
+		return command;
+	}
+
 	private SlashCommandDefinition createCommandInfo() {
 		return new SlashCommandDefinition(COMMAND_INFO, "Shows information about this bot.", new SlashCommandHandler() {
 			@Override
@@ -320,6 +339,9 @@ public class DiscordBot extends AbstractIdleService {
 		if (!commandSlash.containsKey(COMMAND_INFO)) {
 			addCommand(createCommandInfo());
 		}
+		if (!commandSlash.containsKey(COMMAND_FEEDBACK)) {
+			addCommand(createCommandFeedback());
+		}
 	}
 
 	private JSONObject loadConfig() {
@@ -405,12 +427,21 @@ public class DiscordBot extends AbstractIdleService {
 								reporting.addException(e);
 								exceptionHandler.handleMessageCommandException(commandDefinition, commandEvent, e);
 							} finally {
-								if (!commandEvent.hasReplied()) {
-									hook.deleteOriginal().complete();
-								}
-
 								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
 									submitReport(reporting);
+								}
+
+								if (!reporting.getExceptions().isEmpty()) {
+									commandEvent.replyEmbed(new EmbedBuilder().setColor(Color.red)
+											.appendDescription("Sorry, there was a problem completing your request.\n"
+													+ reporting.getExceptions().stream()
+															.map(e -> "`" + e.getMessage() + "`").distinct()
+															.collect(Collectors.joining("\n")))
+											.build());
+								}
+
+								if (!commandEvent.hasReplied()) {
+									hook.deleteOriginal().complete();
 								}
 							}
 						});
@@ -521,12 +552,21 @@ public class DiscordBot extends AbstractIdleService {
 								reporting.addException(e);
 								exceptionHandler.handleSlashCommandException(commandDefinition, commandEvent, e);
 							} finally {
-								if (!commandEvent.hasReplied()) {
-									hook.deleteOriginal().complete();
-								}
-
 								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
 									submitReport(reporting);
+								}
+
+								if (!reporting.getExceptions().isEmpty()) {
+									commandEvent.replyEmbed(new EmbedBuilder().setColor(Color.red)
+											.appendDescription("There was a problem completing your request.\n"
+													+ reporting.getExceptions().stream()
+															.map(e -> "`" + e.getMessage() + "`").distinct()
+															.collect(Collectors.joining("\n")))
+											.build());
+								}
+
+								if (!commandEvent.hasReplied()) {
+									hook.deleteOriginal().complete();
 								}
 							}
 						});
