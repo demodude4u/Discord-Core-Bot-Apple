@@ -77,8 +77,6 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 	private boolean ignorePrivateChannels = false;
 
-	private ExceptionHandler exceptionHandler;
-
 	private final JSONObject configJson;
 
 	private JDA jda;
@@ -92,24 +90,6 @@ public class DiscordBot extends AbstractIdleService {
 
 	DiscordBot() {
 		configJson = loadConfig();
-
-		exceptionHandler = new ExceptionHandler() {
-
-			@Override
-			public void handleMessageCommandException(MessageCommandDefinition command, MessageCommandEvent event,
-					Exception e) {
-				e.printStackTrace();
-				event.reply("Unhandled Error: [" + e.getClass().getSimpleName() + "] "
-						+ ((e.getMessage() != null) ? e.getMessage() : ""));
-			}
-
-			@Override
-			public void handleSlashCommandException(SlashCommandDefinition command, EventReply event, Exception e) {
-				e.printStackTrace();
-				event.reply("Unhandled Error: [" + e.getClass().getSimpleName() + "] "
-						+ ((e.getMessage() != null) ? e.getMessage() : ""));
-			}
-		};
 	}
 
 	public void addCommand(MessageCommandDefinition command) {
@@ -366,10 +346,6 @@ public class DiscordBot extends AbstractIdleService {
 		this.customSetup = customSetup;
 	}
 
-	public void setExceptionHandler(ExceptionHandler exceptionHandler) {
-		this.exceptionHandler = exceptionHandler;
-	}
-
 	public void setIgnorePrivateChannels(boolean ignorePrivateChannels) {
 		this.ignorePrivateChannels = ignorePrivateChannels;
 	}
@@ -425,7 +401,6 @@ public class DiscordBot extends AbstractIdleService {
 								commandDefinition.getHandler().handleCommand(commandEvent);
 							} catch (Exception e) {
 								reporting.addException(e);
-								exceptionHandler.handleMessageCommandException(commandDefinition, commandEvent, e);
 							} finally {
 								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
 									submitReport(reporting);
@@ -550,7 +525,6 @@ public class DiscordBot extends AbstractIdleService {
 								commandDefinition.getHandler().handleCommand(commandEvent);
 							} catch (Exception e) {
 								reporting.addException(e);
-								exceptionHandler.handleSlashCommandException(commandDefinition, commandEvent, e);
 							} finally {
 								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
 									submitReport(reporting);
@@ -558,7 +532,7 @@ public class DiscordBot extends AbstractIdleService {
 
 								if (!reporting.getExceptions().isEmpty()) {
 									commandEvent.replyEmbed(new EmbedBuilder().setColor(Color.red)
-											.appendDescription("There was a problem completing your request.\n"
+											.appendDescription("Sorry, there was a problem completing your request.\n"
 													+ reporting.getExceptions().stream()
 															.map(e -> "`" + e.getMessage() + "`").distinct()
 															.collect(Collectors.joining("\n")))

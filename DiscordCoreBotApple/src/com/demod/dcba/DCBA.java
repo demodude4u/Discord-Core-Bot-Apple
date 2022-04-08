@@ -40,8 +40,6 @@ public final class DCBA {
 		Builder withCommandPrefix(String commandPrefix);
 
 		Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup);
-
-		Builder withExceptionHandler(ExceptionHandler handler);
 	}
 
 	private static abstract class BuilderDeferred implements Builder {
@@ -110,11 +108,6 @@ public final class DCBA {
 		@Override
 		public Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup) {
 			return builder.withCustomSetup(customSetup);
-		}
-
-		@Override
-		public Builder withExceptionHandler(ExceptionHandler handler) {
-			return builder.withExceptionHandler(handler);
 		}
 
 	}
@@ -219,12 +212,6 @@ public final class DCBA {
 		@Override
 		public Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup) {
 			bot.setCustomSetup(customSetup);
-			return this;
-		}
-
-		@Override
-		public Builder withExceptionHandler(ExceptionHandler handler) {
-			bot.setExceptionHandler(handler);
 			return this;
 		}
 

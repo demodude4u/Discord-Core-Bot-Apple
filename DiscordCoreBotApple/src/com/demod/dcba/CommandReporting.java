@@ -117,7 +117,7 @@ public class CommandReporting {
 			List<String> exceptionMessages = exceptions.stream()
 					.map(e -> e.getClass().getSimpleName() + ": " + e.getMessage()).collect(Collectors.toList());
 			builder.addField("Exceptions", limitContent(1000, joinUnique(exceptionMessages)), true);
-			builder.addField("Stack Trace", limitContent(2000, exceptions.stream().map(e -> {
+			builder.addField("Stack Trace", limitContent(1000, exceptions.stream().map(e -> {
 				try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
 					e.printStackTrace(pw);
 					pw.flush();
