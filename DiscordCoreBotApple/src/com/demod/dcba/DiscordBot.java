@@ -524,6 +524,8 @@ public class DiscordBot extends AbstractIdleService {
 							try {
 								commandDefinition.getHandler().handleCommand(commandEvent);
 							} catch (Exception e) {
+								System.err.println("Uncaught Exception!");
+								e.printStackTrace();
 								reporting.addException(e);
 							} finally {
 								if (!commandDefinition.hasRestriction(CommandRestriction.NO_REPORTING)) {
@@ -569,6 +571,8 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	public synchronized void submitReport(CommandReporting reporting) {
+		reporting.getExceptions().stream().forEach(Exception::printStackTrace);
+
 		try {
 			List<MessageEmbed> embeds = reporting.createEmbeds();
 
