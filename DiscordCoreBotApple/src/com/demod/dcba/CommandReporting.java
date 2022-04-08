@@ -47,14 +47,14 @@ public class CommandReporting {
 	private final List<Exception> exceptions = new ArrayList<>();
 	private final List<Field> fields = new ArrayList<>();
 
-	public CommandReporting(String author, String authorIconURL) {
+	public CommandReporting(String author, String authorIconURL, Instant commandStart) {
 		this.author = author;
 		this.authorIconURL = authorIconURL;
-		this.commandStart = Instant.now();
+		this.commandStart = commandStart;
 	}
 
-	public CommandReporting(String author, String authorIconURL, String command) {
-		this(author, authorIconURL);
+	public CommandReporting(String author, String authorIconURL, String command, Instant commandStart) {
+		this(author, authorIconURL, commandStart);
 		this.command = command;
 	}
 
@@ -84,7 +84,9 @@ public class CommandReporting {
 	public List<MessageEmbed> createEmbeds() {
 		EmbedBuilder builder = new EmbedBuilder();
 		builder.setAuthor(author, null, authorIconURL);
-		builder.setTimestamp(commandStart);
+		if (commandStart != null) {
+			builder.setTimestamp(commandStart);
+		}
 
 		if (level != Level.INFO) {
 			builder.setColor(level.getColor());
@@ -94,8 +96,10 @@ public class CommandReporting {
 			builder.addField("Command", limitContent(1000, command), false);
 		}
 
-		Duration responseTime = Duration.between(commandStart, Instant.now());
-		builder.addField("Response Time", responseTime.toMillis() + "ms", true);
+		if (commandStart != null) {
+			Duration responseTime = Duration.between(commandStart, Instant.now());
+			builder.addField("Response Time", responseTime.toMillis() + "ms", true);
+		}
 
 		for (Field field : fields) {
 			builder.addField(field);

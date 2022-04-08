@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -103,8 +104,7 @@ public class DiscordBot extends AbstractIdleService {
 			}
 
 			@Override
-			public void handleSlashCommandException(SlashCommandDefinition command, EventReply event,
-					Exception e) {
+			public void handleSlashCommandException(SlashCommandDefinition command, EventReply event, Exception e) {
 				e.printStackTrace();
 				event.reply("Unhandled Error: [" + e.getClass().getSimpleName() + "] "
 						+ ((e.getMessage() != null) ? e.getMessage() : ""));
@@ -285,7 +285,7 @@ public class DiscordBot extends AbstractIdleService {
 			}
 		}
 
-		return new CommandReporting(author, authorIconURL, command);
+		return new CommandReporting(author, authorIconURL, command, Instant.now());
 	}
 
 	public Optional<String> getCommandPrefix() {
