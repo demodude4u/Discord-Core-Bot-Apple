@@ -24,8 +24,7 @@ public class CommandTesting {
 				.addSlashCommand("params", "The bot will recite the parameters that are recognized.", event -> {
 					EmbedBuilder embed = new EmbedBuilder();
 					event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
-					event.optParamGuildChannel("channel")
-							.ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
+					event.optParamChannel("channel").ifPresent(o -> embed.addField("channel", "" + o.getName(), true));
 					event.optParamLong("integer").ifPresent(o -> embed.addField("integer", "" + o, true));
 					event.optParamMentionable("mentionable")
 							.ifPresent(o -> embed.addField("mentionable", "" + o.getAsMention(), true));

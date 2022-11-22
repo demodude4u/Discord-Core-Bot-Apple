@@ -1,16 +1,17 @@
 package com.demod.dcba;
 
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.context.MessageContextInteraction;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 public class MessageCommandEvent implements EventReply {
 
@@ -66,6 +67,7 @@ public class MessageCommandEvent implements EventReply {
 		return event.getUser();
 	}
 
+	@Override
 	public CommandReporting getReporting() {
 		return reporting;
 	}
@@ -83,14 +85,6 @@ public class MessageCommandEvent implements EventReply {
 	}
 
 	@Override
-	public Message reply(Message message) {
-		replied = true;
-		Message ret = hook.sendMessage(message).setEphemeral(ephemeral).complete();
-		reporting.addReply(ret);
-		return ret;
-	}
-
-	@Override
 	public Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds) {
 		replied = true;
 		Message ret = hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
@@ -101,7 +95,7 @@ public class MessageCommandEvent implements EventReply {
 	@Override
 	public Message replyFile(byte[] data, String filename) {
 		replied = true;
-		Message ret = hook.sendFile(data, filename).setEphemeral(ephemeral).complete();
+		Message ret = hook.sendFiles(FileUpload.fromData(data, filename)).setEphemeral(ephemeral).complete();
 		reporting.addReply(ret);
 		return ret;
 	}

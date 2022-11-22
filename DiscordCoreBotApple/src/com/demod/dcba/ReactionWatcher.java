@@ -1,10 +1,10 @@
 package com.demod.dcba;
 
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
+import net.dv8tion.jda.api.utils.SplitUtil;
+import net.dv8tion.jda.api.utils.SplitUtil.Strategy;
 
 @FunctionalInterface
 public interface ReactionWatcher {
@@ -14,7 +14,7 @@ public interface ReactionWatcher {
 			String response;
 			response = seenSimpleMessage(event);
 			if (response != null) {
-				new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE).forEach(m -> {
+				SplitUtil.split(response, 2000, true, Strategy.NEWLINE, Strategy.ANYWHERE).forEach(m -> {
 					event.getChannel().sendMessage(m).complete();
 				});
 			}

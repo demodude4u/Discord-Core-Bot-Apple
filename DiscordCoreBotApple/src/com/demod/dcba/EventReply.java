@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.MessageBuilder.SplitPolicy;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.SplitUtil;
+import net.dv8tion.jda.api.utils.SplitUtil.Strategy;
 
 public interface EventReply {
 
@@ -38,13 +39,11 @@ public interface EventReply {
 		}
 	}
 
-	Message reply(Message message);
-
 	default List<Message> reply(String response) {
 		List<Message> ret = new ArrayList<>();
-		for (Message message : new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE)) {
-			// reply(message);
-			ret.add(replyEmbed(new EmbedBuilder().appendDescription(message.getContentRaw()).build()));
+		for (String split : SplitUtil.split(response, MessageEmbed.DESCRIPTION_MAX_LENGTH, true, Strategy.NEWLINE,
+				Strategy.ANYWHERE)) {
+			ret.add(replyEmbed(new EmbedBuilder().appendDescription(split).build()));
 		}
 		return ret;
 	}
@@ -81,14 +80,10 @@ public interface EventReply {
 		}
 	}
 
-	default Message replyPrivate(Message message) {
-		return getReplyPrivateUser().openPrivateChannel().complete().sendMessage(message).complete();
-	}
-
 	default void replyPrivate(String response) {
-		for (Message message : new MessageBuilder(response).buildAll(SplitPolicy.NEWLINE)) {
-			// reply(message);
-			replyPrivateEmbed(new EmbedBuilder().appendDescription(message.getContentRaw()).build());
+		for (String split : SplitUtil.split(response, MessageEmbed.DESCRIPTION_MAX_LENGTH, true, Strategy.NEWLINE,
+				Strategy.ANYWHERE)) {
+			replyPrivateEmbed(new EmbedBuilder().appendDescription(split).build());
 		}
 	}
 
@@ -97,7 +92,8 @@ public interface EventReply {
 	}
 
 	default Message replyPrivateFile(byte[] data, String filename) {
-		return getReplyPrivateUser().openPrivateChannel().complete().sendFile(data, filename).complete();
+		return getReplyPrivateUser().openPrivateChannel().complete().sendFiles(FileUpload.fromData(data, filename))
+				.complete();
 	}
 
 }

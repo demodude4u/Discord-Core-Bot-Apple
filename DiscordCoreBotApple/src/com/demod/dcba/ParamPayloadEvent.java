@@ -3,13 +3,12 @@ package com.demod.dcba;
 import java.util.List;
 import java.util.Optional;
 
-import net.dv8tion.jda.api.entities.GuildChannel;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message.Attachment;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
@@ -25,12 +24,12 @@ public abstract class ParamPayloadEvent {
 		return payload.getOption(name).getAsBoolean();
 	}
 
-	public double getParamDouble(String name) {
-		return payload.getOption(name).getAsDouble();
+	public GuildChannelUnion getParamChannel(String name) {
+		return payload.getOption(name).getAsChannel();
 	}
 
-	public GuildChannel getParamGuildChannel(String name) {
-		return payload.getOption(name).getAsGuildChannel();
+	public double getParamDouble(String name) {
+		return payload.getOption(name).getAsDouble();
 	}
 
 	public long getParamLong(String name) {
@@ -43,10 +42,6 @@ public abstract class ParamPayloadEvent {
 
 	public IMentionable getParamMentionable(String name) {
 		return payload.getOption(name).getAsMentionable();
-	}
-
-	public MessageChannel getParamMessageChannel(String name) {
-		return payload.getOption(name).getAsMessageChannel();
 	}
 
 	public Role getParamRole(String name) {
@@ -73,16 +68,16 @@ public abstract class ParamPayloadEvent {
 		return Optional.ofNullable(payload.getOption(name)).map(OptionMapping::getAsBoolean);
 	}
 
+	public Optional<GuildChannelUnion> optParamChannel(String name) {
+		return Optional.ofNullable(payload.getOption(name)).map(OptionMapping::getAsChannel);
+	}
+
 	public Optional<Double> optParamDouble(String name) {
 		try {
 			return Optional.ofNullable(payload.getOption(name)).map(OptionMapping::getAsDouble);
 		} catch (NumberFormatException e) {
 			return Optional.empty();
 		}
-	}
-
-	public Optional<GuildChannel> optParamGuildChannel(String name) {
-		return Optional.ofNullable(payload.getOption(name)).map(OptionMapping::getAsGuildChannel);
 	}
 
 	public Optional<Long> optParamLong(String name) {
@@ -99,10 +94,6 @@ public abstract class ParamPayloadEvent {
 
 	public Optional<IMentionable> optParamMentionable(String name) {
 		return Optional.ofNullable(payload.getOption(name)).map(OptionMapping::getAsMentionable);
-	}
-
-	public Optional<MessageChannel> optParamMessageChannel(String name) {
-		return Optional.ofNullable(payload.getOption(name)).map(OptionMapping::getAsMessageChannel);
 	}
 
 	public Optional<Role> optParamRole(String name) {

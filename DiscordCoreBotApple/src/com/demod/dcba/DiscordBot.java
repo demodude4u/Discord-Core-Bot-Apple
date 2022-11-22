@@ -30,14 +30,14 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.PrivateChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -58,6 +58,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 public class DiscordBot extends AbstractIdleService {
 
@@ -468,7 +469,7 @@ public class DiscordBot extends AbstractIdleService {
 							return;
 						}
 
-						boolean startsWithMentionMe = message.getMentionedUsers().stream()
+						boolean startsWithMentionMe = message.getMentions().getUsers().stream()
 								.anyMatch(u -> u.getIdLong() == event.getJDA().getSelfUser().getIdLong())
 								&& rawContent.startsWith(mentionMe);
 						if (startsWithMentionMe) {
@@ -600,7 +601,7 @@ public class DiscordBot extends AbstractIdleService {
 					e.printStackTrace();
 					e.printStackTrace(pw);
 					pw.flush();
-					privateChannel.sendFile(sw.toString().getBytes(), "Exception.txt").complete();
+					privateChannel.sendFiles(FileUpload.fromData(sw.toString().getBytes(), "Exception.txt")).complete();
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}

@@ -5,7 +5,7 @@ import java.io.IOException;
 import com.demod.dcba.DCBA;
 import com.demod.dcba.DiscordBot;
 
-import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class HelloExample {
