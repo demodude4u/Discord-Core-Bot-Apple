@@ -47,6 +47,8 @@ public class CommandReporting {
 	private final List<Exception> exceptions = new ArrayList<>();
 	private final List<Field> fields = new ArrayList<>();
 
+	private boolean newFormatDetected = false;
+
 	public CommandReporting(String author, String authorIconURL, Instant commandStart) {
 		this.author = author;
 		this.authorIconURL = authorIconURL;
@@ -180,6 +182,10 @@ public class CommandReporting {
 		return level;
 	}
 
+	public boolean isNewFormatDetected() {
+		return newFormatDetected;
+	}
+
 	private String joinUnique(List<String> messages) {
 		Multiset<String> unique = LinkedHashMultiset.create(messages);
 		return unique.entrySet().stream()
@@ -209,5 +215,9 @@ public class CommandReporting {
 
 	public void setLevel(Level level) {
 		this.level = level;
+	}
+
+	public void setNewFormatDetected(boolean newFormatDetected) {
+		this.newFormatDetected = newFormatDetected;
 	}
 }
