@@ -407,12 +407,12 @@ public class DiscordBot extends AbstractIdleService {
 									submitReport(reporting);
 								}
 
-								if (!reporting.getExceptions().isEmpty()) {
+								if (!reporting.getExceptionsWithBlame().isEmpty()) {
 									commandEvent.replyEmbed(new EmbedBuilder().setColor(Color.red)
 											.appendDescription("Sorry, there was a problem completing your request.\n"
-													+ reporting.getExceptions().stream()
-															.map(e -> "`" + e.getMessage() + "`").distinct()
-															.collect(Collectors.joining("\n")))
+													+ reporting.getExceptionsWithBlame().stream()
+															.map(e -> "`" + e.getException().getMessage() + "`")
+															.distinct().collect(Collectors.joining("\n")))
 											.build());
 								}
 
@@ -533,12 +533,12 @@ public class DiscordBot extends AbstractIdleService {
 									submitReport(reporting);
 								}
 
-								if (!reporting.getExceptions().isEmpty()) {
+								if (!reporting.getExceptionsWithBlame().isEmpty()) {
 									commandEvent.replyEmbed(new EmbedBuilder().setColor(Color.red)
 											.appendDescription("Sorry, there was a problem completing your request.\n"
-													+ reporting.getExceptions().stream()
-															.map(e -> "`" + e.getMessage() + "`").distinct()
-															.collect(Collectors.joining("\n")))
+													+ reporting.getExceptionsWithBlame().stream()
+															.map(e -> "`" + e.getException().getMessage() + "`")
+															.distinct().collect(Collectors.joining("\n")))
 											.build());
 								}
 
@@ -572,7 +572,12 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	public synchronized void submitReport(CommandReporting reporting) {
-		reporting.getExceptions().stream().forEach(Exception::printStackTrace);
+		reporting.getExceptionsWithBlame().stream().forEach(e -> {
+			if (e.getBlame().isPresent()) {
+				System.err.println("(" + e.getBlame().get() + ")");
+			}
+			e.getException().printStackTrace();
+		});
 
 		try {
 			List<MessageEmbed> embeds = reporting.createEmbeds();

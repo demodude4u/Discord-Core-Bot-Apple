@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
@@ -20,6 +21,24 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 
 public class CommandReporting {
+	public static class ExceptionWithBlame {
+		private final Exception e;
+		private final Optional<String> blame;
+
+		public ExceptionWithBlame(Exception e, Optional<String> blame) {
+			this.e = e;
+			this.blame = blame;
+		}
+
+		public Optional<String> getBlame() {
+			return blame;
+		}
+
+		public Exception getException() {
+			return e;
+		}
+	}
+
 	public static enum Level {
 		INFO(Color.gray), WARNING(Color.orange), ERROR(Color.red), ATTENTION(Color.green), DEBUG(Color.magenta);
 
@@ -44,7 +63,7 @@ public class CommandReporting {
 	private final List<Message> replies = new ArrayList<>();
 	private final List<String> warnings = new ArrayList<>();
 	private final List<String> debugs = new ArrayList<>();
-	private final List<Exception> exceptions = new ArrayList<>();
+	private final List<ExceptionWithBlame> exceptions = new ArrayList<>();
 	private final List<Field> fields = new ArrayList<>();
 
 	private boolean newFormatDetected = false;
@@ -65,8 +84,12 @@ public class CommandReporting {
 		elevateLevel(Level.DEBUG);
 	}
 
-	public synchronized void addException(Exception e) {
-		exceptions.add(e);
+	public void addException(Exception e) {
+		addException(e, null);
+	}
+
+	public synchronized void addException(Exception e, String blame) {
+		exceptions.add(new ExceptionWithBlame(e, Optional.ofNullable(blame)));
 		elevateLevel(Level.ERROR);
 	}
 
@@ -116,12 +139,17 @@ public class CommandReporting {
 		}
 
 		if (!exceptions.isEmpty()) {
-			List<String> exceptionMessages = exceptions.stream()
-					.map(e -> e.getClass().getSimpleName() + ": " + e.getMessage()).collect(Collectors.toList());
+			List<String> exceptionMessages = exceptions
+					.stream().map(e -> e.getException().getClass().getSimpleName() + ": "
+							+ e.getException().getMessage() + e.getBlame().map(s -> " (" + s + ")").orElse(""))
+					.collect(Collectors.toList());
 			builder.addField("Exceptions", limitContent(1000, joinUnique(exceptionMessages)), true);
 			builder.addField("Stack Trace", limitContent(1000, exceptions.stream().map(e -> {
 				try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
-					e.printStackTrace(pw);
+					if (e.getBlame().isPresent()) {
+						pw.print("(" + e.getBlame().get() + ") ");
+					}
+					e.getException().printStackTrace(pw);
 					pw.flush();
 					return sw.toString();
 				} catch (IOException e1) {
@@ -175,6 +203,10 @@ public class CommandReporting {
 	}
 
 	public List<Exception> getExceptions() {
+		return exceptions.stream().map(ExceptionWithBlame::getException).collect(Collectors.toList());
+	}
+
+	public List<ExceptionWithBlame> getExceptionsWithBlame() {
 		return exceptions;
 	}
 

@@ -53,7 +53,7 @@ public interface EventReply {
 	Message replyFile(byte[] data, String filename);
 
 	default public void replyIfNoException(String response) {
-		if (getReporting().getExceptions().isEmpty()) {
+		if (getReporting().getExceptionsWithBlame().isEmpty()) {
 			reply(response);
 		}
 	}
