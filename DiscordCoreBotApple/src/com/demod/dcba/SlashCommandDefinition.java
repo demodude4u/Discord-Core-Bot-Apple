@@ -13,7 +13,6 @@ public class SlashCommandDefinition {
 	private final SlashCommandHandler handler;
 	private final Optional<AutoCompleteHandler> autoCompleteHandler;
 	private final List<SlashCommandOptionDefinition> options = new ArrayList<>();
-	private final List<String> legacies = new ArrayList<>();
 	private final EnumSet<CommandRestriction> restrictions = EnumSet.noneOf(CommandRestriction.class);
 
 	public SlashCommandDefinition(String path, String description, SlashCommandHandler handler,
@@ -28,10 +27,6 @@ public class SlashCommandDefinition {
 	public SlashCommandDefinition(String path, String description, SlashCommandHandler handler,
 			SlashCommandOptionDefinition... options) {
 		this(path, description, handler, null, options);
-	}
-
-	public void addLegacy(String name) {
-		legacies.add(name);
 	}
 
 	public void addOption(SlashCommandOptionDefinition option) {
@@ -52,10 +47,6 @@ public class SlashCommandDefinition {
 
 	public SlashCommandHandler getHandler() {
 		return handler;
-	}
-
-	public List<String> getLegacies() {
-		return legacies;
 	}
 
 	public List<SlashCommandOptionDefinition> getOptions() {

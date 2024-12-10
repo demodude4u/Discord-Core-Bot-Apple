@@ -12,8 +12,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 public final class DCBA {
 
 	public static interface Builder {
-		MessageCommandBuilder addMessageCommand(String name, MessageCommandHandler handler);
-
 		Builder addReactionWatcher(ReactionWatcher watcher);
 
 		default Builder addReactionWatcher(ReactionWatcher.SimpleWatcher watcher) {
@@ -25,15 +23,7 @@ public final class DCBA {
 		SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler commandhandler,
 				AutoCompleteHandler autoCompleteHandler);
 
-		Builder addTextWatcher(TextWatcher watcher);
-
-		default Builder addTextWatcher(TextWatcher.SimpleWatcher watcher) {
-			return addTextWatcher((TextWatcher) watcher);
-		}
-
 		DiscordBot create();
-
-		Builder ignorePrivateChannels();
 
 		InfoBuilder setInfo(String botName);
 
@@ -47,11 +37,6 @@ public final class DCBA {
 
 		public BuilderDeferred(BuilderImpl builder) {
 			this.builder = builder;
-		}
-
-		@Override
-		public MessageCommandBuilder addMessageCommand(String name, MessageCommandHandler handler) {
-			return builder.addMessageCommand(name, handler);
 		}
 
 		@Override
@@ -76,23 +61,8 @@ public final class DCBA {
 		}
 
 		@Override
-		public Builder addTextWatcher(com.demod.dcba.TextWatcher.SimpleWatcher watcher) {
-			return builder.addTextWatcher(watcher);
-		}
-
-		@Override
-		public Builder addTextWatcher(TextWatcher watcher) {
-			return builder.addTextWatcher(watcher);
-		}
-
-		@Override
 		public DiscordBot create() {
 			return builder.create();
-		}
-
-		@Override
-		public Builder ignorePrivateChannels() {
-			return builder.ignorePrivateChannels();
 		}
 
 		@Override
@@ -116,19 +86,8 @@ public final class DCBA {
 		DiscordBot bot = new DiscordBot();
 
 		SlashCommandBuilderImpl slashCommandBuilder = new SlashCommandBuilderImpl(this);
-		MessageCommandBuilderImpl messageCommandBuilder = new MessageCommandBuilderImpl(this);
 
 		private BuilderImpl() {
-		}
-
-		@Override
-		public MessageCommandBuilder addMessageCommand(String name, MessageCommandHandler handler) {
-			if (messageCommandBuilder.command != null) {
-				bot.addCommand(messageCommandBuilder.command);
-				messageCommandBuilder.command = null;
-			}
-			messageCommandBuilder.command = new MessageCommandDefinition(name, handler);
-			return messageCommandBuilder;
 		}
 
 		@Override
@@ -160,29 +119,13 @@ public final class DCBA {
 		}
 
 		@Override
-		public Builder addTextWatcher(TextWatcher watcher) {
-			bot.setTextWatcher(Optional.of(watcher));
-			return this;
-		}
-
-		@Override
 		public DiscordBot create() {
 			if (slashCommandBuilder.command != null) {
 				bot.addCommand(slashCommandBuilder.command);
 				slashCommandBuilder.command = null;
 			}
-			if (messageCommandBuilder.command != null) {
-				bot.addCommand(messageCommandBuilder.command);
-				messageCommandBuilder.command = null;
-			}
 			bot.initialize();
 			return bot;
-		}
-
-		@Override
-		public Builder ignorePrivateChannels() {
-			bot.setIgnorePrivateChannels(true);
-			return this;
 		}
 
 		@Override
@@ -263,60 +206,6 @@ public final class DCBA {
 		InfoBuilder withVersion(String version);
 	}
 
-	public static interface MessageCommandBuilder extends Builder {
-		MessageCommandBuilder adminOnly();
-
-		MessageCommandBuilder ephemeral();
-
-		MessageCommandBuilder guildChannelOnly();
-
-		MessageCommandBuilder privateChannelOnly();
-
-		MessageCommandBuilder withoutReporting();
-	}
-
-	private static class MessageCommandBuilderImpl extends BuilderDeferred implements MessageCommandBuilder {
-
-		MessageCommandDefinition command = null;
-
-		public MessageCommandBuilderImpl(BuilderImpl builder) {
-			super(builder);
-		}
-
-		@Override
-		public MessageCommandBuilder adminOnly() {
-			command.setRestriction(CommandRestriction.ADMIN_ONLY);
-			return this;
-		}
-
-		@Override
-		public MessageCommandBuilder ephemeral() {
-			command.setRestriction(CommandRestriction.EPHEMERAL);
-			return this;
-		}
-
-		@Override
-		public MessageCommandBuilder guildChannelOnly() {
-			command.setRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
-			command.clearRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
-			return this;
-		}
-
-		@Override
-		public MessageCommandBuilder privateChannelOnly() {
-			command.setRestriction(CommandRestriction.PRIVATE_CHANNEL_ONLY);
-			command.clearRestriction(CommandRestriction.GUILD_CHANNEL_ONLY);
-			return this;
-		}
-
-		@Override
-		public MessageCommandBuilder withoutReporting() {
-			command.setRestriction(CommandRestriction.NO_REPORTING);
-			return this;
-		}
-
-	}
-
 	public static interface SlashCommandBuilder extends Builder {
 		SlashCommandBuilder adminOnly();
 
@@ -327,8 +216,6 @@ public final class DCBA {
 		SlashCommandBuilder privateChannelOnly();
 
 		SlashCommandBuilder withAutoParam(OptionType type, String name, String description);
-
-		SlashCommandBuilder withLegacyWarning(String... names);
 
 		SlashCommandBuilder withOptionalAutoParam(OptionType type, String name, String description);
 
@@ -376,14 +263,6 @@ public final class DCBA {
 		@Override
 		public SlashCommandBuilder withAutoParam(OptionType type, String name, String description) {
 			command.addOption(new SlashCommandOptionDefinition(type, name, description, true, true));
-			return this;
-		}
-
-		@Override
-		public SlashCommandBuilder withLegacyWarning(String... names) {
-			for (String name : names) {
-				command.addLegacy(name);
-			}
 			return this;
 		}
 
