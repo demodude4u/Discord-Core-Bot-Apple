@@ -36,6 +36,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
@@ -64,6 +65,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
+	private Optional<ButtonHandler> buttonHandler = Optional.empty();
 
 	private final JSONObject configJson;
 
@@ -282,6 +284,10 @@ public class DiscordBot extends AbstractIdleService {
 		}
 	}
 
+	public void setButtonHandler(Optional<ButtonHandler> buttonHandler) {
+		this.buttonHandler = buttonHandler;
+	}
+
 	public void setCommandPrefix(Optional<String> commandPrefix) {
 		this.commandPrefix = commandPrefix;
 	}
@@ -312,6 +318,13 @@ public class DiscordBot extends AbstractIdleService {
 		JDABuilder builder = JDABuilder.createDefault(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//
 				.addEventListeners(new ListenerAdapter() {
+					@Override
+					public void onButtonInteraction(ButtonInteractionEvent event) {
+						if (buttonHandler.isPresent()) {
+							buttonHandler.get().onButtonInteraction(event);
+						}
+					}
+
 					@Override
 					public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
 						SlashCommandDefinition commandDefinition = commandSlash

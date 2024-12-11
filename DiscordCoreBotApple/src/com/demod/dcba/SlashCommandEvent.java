@@ -1,6 +1,7 @@
 package com.demod.dcba;
 
 import java.io.InputStream;
+import java.util.List;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -14,6 +15,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
@@ -84,6 +86,13 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 
 	public boolean isFromType(ChannelType type) {
 		return interaction.getChannel().getType() == type;
+	}
+
+	public Message replyEmbed(MessageEmbed embed, List<ItemComponent> actionRow) {
+		replied = true;
+		Message ret = hook.sendMessageEmbeds(embed).setEphemeral(ephemeral).addActionRow(actionRow).complete();
+		reporting.addReply(ret);
+		return ret;
 	}
 
 	@Override

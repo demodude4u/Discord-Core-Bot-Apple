@@ -12,6 +12,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 public final class DCBA {
 
 	public static interface Builder {
+		Builder addButtonHandler(ButtonHandler handler);
+
 		Builder addReactionWatcher(ReactionWatcher watcher);
 
 		default Builder addReactionWatcher(ReactionWatcher.SimpleWatcher watcher) {
@@ -37,6 +39,11 @@ public final class DCBA {
 
 		public BuilderDeferred(BuilderImpl builder) {
 			this.builder = builder;
+		}
+
+		@Override
+		public Builder addButtonHandler(ButtonHandler handler) {
+			return builder.addButtonHandler(handler);
 		}
 
 		@Override
@@ -88,6 +95,12 @@ public final class DCBA {
 		SlashCommandBuilderImpl slashCommandBuilder = new SlashCommandBuilderImpl(this);
 
 		private BuilderImpl() {
+		}
+
+		@Override
+		public Builder addButtonHandler(ButtonHandler handler) {
+			bot.setButtonHandler(Optional.of(handler));
+			return this;
 		}
 
 		@Override
