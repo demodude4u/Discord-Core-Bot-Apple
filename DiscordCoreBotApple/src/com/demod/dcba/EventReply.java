@@ -1,5 +1,9 @@
 package com.demod.dcba;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +54,19 @@ public interface EventReply {
 
 	Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds);
 
-	Message replyFile(byte[] data, String filename);
+	default Message replyFile(byte[] data, String filename) {
+		try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
+			return replyFile(bais, filename);
+		} catch (IOException e) {
+			throw new InternalError(e);// Should not happen
+		}
+	}
+
+	Message replyFile(InputStream data, String filename);
+
+	default Message replyFile(String content, String filename) {
+		return replyFile(content.getBytes(StandardCharsets.UTF_8), filename);
+	}
 
 	default public void replyIfNoException(String response) {
 		if (getReporting().getExceptionsWithBlame().isEmpty()) {

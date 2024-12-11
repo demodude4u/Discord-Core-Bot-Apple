@@ -1,5 +1,7 @@
 package com.demod.dcba;
 
+import java.io.InputStream;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -93,7 +95,7 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 	}
 
 	@Override
-	public Message replyFile(byte[] data, String filename) {
+	public Message replyFile(InputStream data, String filename) {
 		replied = true;
 		Message ret = hook.sendFiles(FileUpload.fromData(data, filename)).setEphemeral(ephemeral).complete();
 		reporting.addReply(ret);
