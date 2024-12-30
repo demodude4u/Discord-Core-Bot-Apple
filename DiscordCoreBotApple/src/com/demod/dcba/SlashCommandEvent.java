@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
+import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
@@ -88,25 +89,26 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 		return interaction.getChannel().getType() == type;
 	}
 
-	public Message replyEmbed(MessageEmbed embed, List<ItemComponent> actionRow) {
+	@Override
+	public Message replyEmbed(List<MessageEmbed> embeds, List<List<ItemComponent>> actionRows) {
 		replied = true;
-		Message ret = hook.sendMessageEmbeds(embed).setEphemeral(ephemeral).addActionRow(actionRow).complete();
+		WebhookMessageCreateAction<Message> action = hook.sendMessageEmbeds(embeds);
+		for (List<ItemComponent> actionRow : actionRows) {
+			action = action.addActionRow(actionRow);
+		}
+		Message ret = action.setEphemeral(ephemeral).complete();
 		reporting.addReply(ret);
 		return ret;
 	}
 
 	@Override
-	public Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds) {
+	public Message replyFile(InputStream data, String filename, List<List<ItemComponent>> actionRows) {
 		replied = true;
-		Message ret = hook.sendMessageEmbeds(embed, embeds).setEphemeral(ephemeral).complete();
-		reporting.addReply(ret);
-		return ret;
-	}
-
-	@Override
-	public Message replyFile(InputStream data, String filename) {
-		replied = true;
-		Message ret = hook.sendFiles(FileUpload.fromData(data, filename)).setEphemeral(ephemeral).complete();
+		WebhookMessageCreateAction<Message> action = hook.sendFiles(FileUpload.fromData(data, filename));
+		for (List<ItemComponent> actionRow : actionRows) {
+			action = action.addActionRow(actionRow);
+		}
+		Message ret = action.setEphemeral(ephemeral).complete();
 		reporting.addReply(ret);
 		return ret;
 	}

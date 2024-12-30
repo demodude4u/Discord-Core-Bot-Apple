@@ -7,10 +7,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
+
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.SplitUtil;
 import net.dv8tion.jda.api.utils.SplitUtil.Strategy;
@@ -52,17 +55,37 @@ public interface EventReply {
 		return ret;
 	}
 
-	Message replyEmbed(MessageEmbed embed, MessageEmbed... embeds);
+	default Message replyEmbed(List<MessageEmbed> embeds) {
+		return replyEmbed(embeds, ImmutableList.of());
+	}
+
+	Message replyEmbed(List<MessageEmbed> embeds, List<List<ItemComponent>> actionRows);
+
+	default Message replyEmbed(MessageEmbed embed) {
+		return replyEmbed(ImmutableList.of(embed));
+	}
+
+	default Message replyEmbed(MessageEmbed embed, List<List<ItemComponent>> actionRows) {
+		return replyEmbed(ImmutableList.of(embed), actionRows);
+	}
 
 	default Message replyFile(byte[] data, String filename) {
+		return replyFile(data, filename, ImmutableList.of());
+	}
+
+	default Message replyFile(byte[] data, String filename, List<List<ItemComponent>> actionRows) {
 		try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
-			return replyFile(bais, filename);
+			return replyFile(bais, filename, actionRows);
 		} catch (IOException e) {
 			throw new InternalError(e);// Should not happen
 		}
 	}
 
-	Message replyFile(InputStream data, String filename);
+	default Message replyFile(InputStream data, String filename) {
+		return replyFile(data, filename, ImmutableList.of());
+	}
+
+	Message replyFile(InputStream data, String filename, List<List<ItemComponent>> actionRows);
 
 	default Message replyFile(String content, String filename) {
 		return replyFile(content.getBytes(StandardCharsets.UTF_8), filename);
