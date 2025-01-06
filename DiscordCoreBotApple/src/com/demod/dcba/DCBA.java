@@ -25,6 +25,8 @@ public final class DCBA {
 		SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler commandhandler,
 				AutoCompleteHandler autoCompleteHandler);
 
+		Builder addStringSelectHandler(StringSelectHandler handler);
+
 		DiscordBot create();
 
 		InfoBuilder setInfo(String botName);
@@ -65,6 +67,11 @@ public final class DCBA {
 		public SlashCommandBuilder addSlashCommand(String path, String description, SlashCommandHandler commandhandler,
 				AutoCompleteHandler autoCompleteHandler) {
 			return builder.addSlashCommand(path, description, commandhandler, autoCompleteHandler);
+		}
+
+		@Override
+		public Builder addStringSelectHandler(StringSelectHandler handler) {
+			return builder.addStringSelectHandler(handler);
 		}
 
 		@Override
@@ -129,6 +136,12 @@ public final class DCBA {
 			slashCommandBuilder.command = new SlashCommandDefinition(path, description, commandhandler,
 					autoCompleteHandler);
 			return slashCommandBuilder;
+		}
+
+		@Override
+		public Builder addStringSelectHandler(StringSelectHandler handler) {
+			bot.setStringSelectHandler(Optional.of(handler));
+			return this;
 		}
 
 		@Override

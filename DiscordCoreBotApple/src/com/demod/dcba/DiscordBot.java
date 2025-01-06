@@ -37,6 +37,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
@@ -66,6 +67,7 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 	private Optional<ButtonHandler> buttonHandler = Optional.empty();
+	private Optional<StringSelectHandler> stringSelectHandler = Optional.empty();
 
 	private final JSONObject configJson;
 
@@ -300,6 +302,10 @@ public class DiscordBot extends AbstractIdleService {
 		this.reactionWatcher = reactionWatcher;
 	}
 
+	public void setStringSelectHandler(Optional<StringSelectHandler> stringSelectHandler) {
+		this.stringSelectHandler = stringSelectHandler;
+	}
+
 	@Override
 	protected void shutDown() {
 		jda.shutdown();
@@ -393,6 +399,13 @@ public class DiscordBot extends AbstractIdleService {
 								}
 							}
 						});
+					}
+
+					@Override
+					public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+						if (stringSelectHandler.isPresent()) {
+							stringSelectHandler.get().onStringSelectInteraction(event);
+						}
 					}
 				});
 		if (customSetup != null) {
