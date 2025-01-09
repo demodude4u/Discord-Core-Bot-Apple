@@ -31,6 +31,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -354,6 +355,8 @@ public class DiscordBot extends AbstractIdleService {
 							// TODO change event class to a delegate version that records replies for
 							// reporting
 							CommandReporting reporting = createReporting(event);
+							reporting.addField(
+									new Field("Context", "[Message](" + event.getMessage().getJumpUrl() + ")", true));
 							try {
 								buttonHandler.get().onButtonInteraction(event, reporting);
 							} catch (Exception e) {
@@ -440,6 +443,8 @@ public class DiscordBot extends AbstractIdleService {
 							// TODO change event class to a delegate version that records replies for
 							// reporting
 							CommandReporting reporting = createReporting(event);
+							reporting.addField(
+									new Field("Context", "[Message](" + event.getMessage().getJumpUrl() + ")", true));
 							try {
 								stringSelectHandler.get().onStringSelectInteraction(event, reporting);
 							} catch (Exception e) {
