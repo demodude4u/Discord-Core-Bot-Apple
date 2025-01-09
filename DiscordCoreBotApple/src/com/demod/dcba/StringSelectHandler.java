@@ -4,5 +4,5 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 
 @FunctionalInterface
 public interface StringSelectHandler {
-	void onStringSelectInteraction(StringSelectInteractionEvent event);
+	void onStringSelectInteraction(StringSelectInteractionEvent event, CommandReporting reporting) throws Exception;
 }

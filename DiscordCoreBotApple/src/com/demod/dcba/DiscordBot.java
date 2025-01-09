@@ -37,6 +37,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericSelectMenuInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
@@ -227,6 +229,28 @@ public class DiscordBot extends AbstractIdleService {
 		return new CommandReporting(author, authorIconURL, command, Instant.now());
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private CommandReporting createReporting(GenericComponentInteractionCreateEvent event) {
+		String author;
+		if (event.getChannelType() == ChannelType.PRIVATE) {
+			author = event.getUser().getName();
+		} else {
+			author = event.getGuild().getName() + " / #" + event.getMessageChannel().getName() + " / "
+					+ event.getUser().getName();
+		}
+
+		String authorIconURL = event.getUser().getEffectiveAvatarUrl();
+
+		String command = event.getComponentId();
+
+		if (event instanceof GenericSelectMenuInteractionEvent) {
+			List values = ((GenericSelectMenuInteractionEvent) event).getValues();
+			command += "[" + values.stream().map(Object::toString).collect(Collectors.joining(",")) + "]";
+		}
+
+		return new CommandReporting(author, authorIconURL, command, Instant.now());
+	}
+
 	public Optional<String> getCommandPrefix() {
 		return commandPrefix;
 	}
@@ -327,7 +351,16 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onButtonInteraction(ButtonInteractionEvent event) {
 						if (buttonHandler.isPresent()) {
-							buttonHandler.get().onButtonInteraction(event);
+							// TODO change event class to a delegate version that records replies for
+							// reporting
+							CommandReporting reporting = createReporting(event);
+							try {
+								buttonHandler.get().onButtonInteraction(event, reporting);
+							} catch (Exception e) {
+								e.printStackTrace();
+								reporting.addException(e);
+							}
+							submitReport(reporting);
 						}
 					}
 
@@ -404,7 +437,16 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onStringSelectInteraction(StringSelectInteractionEvent event) {
 						if (stringSelectHandler.isPresent()) {
-							stringSelectHandler.get().onStringSelectInteraction(event);
+							// TODO change event class to a delegate version that records replies for
+							// reporting
+							CommandReporting reporting = createReporting(event);
+							try {
+								stringSelectHandler.get().onStringSelectInteraction(event, reporting);
+							} catch (Exception e) {
+								e.printStackTrace();
+								reporting.addException(e);
+							}
+							submitReport(reporting);
 						}
 					}
 				});
