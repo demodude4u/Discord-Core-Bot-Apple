@@ -94,7 +94,9 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 		replied = true;
 		WebhookMessageCreateAction<Message> action = hook.sendMessageEmbeds(embeds);
 		for (List<ItemComponent> actionRow : actionRows) {
-			action = action.addActionRow(actionRow);
+			if (!actionRow.isEmpty()) {
+				action = action.addActionRow(actionRow);
+			}
 		}
 		Message ret = action.setEphemeral(ephemeral).complete();
 		reporting.addReply(ret);
@@ -106,7 +108,9 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 		replied = true;
 		WebhookMessageCreateAction<Message> action = hook.sendFiles(FileUpload.fromData(data, filename));
 		for (List<ItemComponent> actionRow : actionRows) {
-			action = action.addActionRow(actionRow);
+			if (!actionRow.isEmpty()) {
+				action = action.addActionRow(actionRow);
+			}
 		}
 		Message ret = action.setEphemeral(ephemeral).complete();
 		reporting.addReply(ret);
