@@ -17,6 +17,7 @@ import com.google.common.collect.Multiset;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 
@@ -65,6 +66,8 @@ public class CommandReporting {
 	private final List<String> debugs = new ArrayList<>();
 	private final List<ExceptionWithBlame> exceptions = new ArrayList<>();
 	private final List<Field> fields = new ArrayList<>();
+	private final List<String> replyImageAttachments = new ArrayList<>();
+	private final List<String> replyFileAttachments = new ArrayList<>();
 
 	public CommandReporting(String author, String authorIconURL, Instant commandStart) {
 		this.author = author;
@@ -97,6 +100,18 @@ public class CommandReporting {
 
 	public void addReply(Message message) {
 		replies.add(message);
+		for (MessageEmbed embed : message.getEmbeds()) {
+			if (embed.getImage() != null) {
+				replyImageAttachments.add(embed.getImage().getUrl());
+			}
+		}
+		for (Attachment attachment : message.getAttachments()) {
+			if (attachment.isImage()) {
+				replyImageAttachments.add(attachment.getUrl());
+			} else {
+				replyFileAttachments.add(attachment.getUrl());
+			}
+		}
 	}
 
 	public void addWarning(String message) {
@@ -165,9 +180,8 @@ public class CommandReporting {
 
 		if (imageURL != null) {
 			builder.setImage(imageURL);
-		} else {
-			replies.stream().flatMap(m -> m.getEmbeds().stream()).filter(e -> e.getImage() != null)
-					.map(e -> e.getImage().getUrl()).findFirst().ifPresent(builder::setImage);
+		} else if (replyImageAttachments.size() == 1) {
+			builder.setImage(replyImageAttachments.remove(0));
 		}
 
 		if (builder.isValidLength()) {
@@ -192,6 +206,16 @@ public class CommandReporting {
 			}
 		}
 		return embeds;
+	}
+
+	public List<String> createURLList() {
+		if (replyFileAttachments.isEmpty() && replyImageAttachments.isEmpty()) {
+			return ImmutableList.of();
+		}
+		List<String> ret = new ArrayList<>();
+		ret.addAll(replyImageAttachments);
+		ret.addAll(replyFileAttachments);
+		return ret;
 	}
 
 	private void elevateLevel(Level level) {

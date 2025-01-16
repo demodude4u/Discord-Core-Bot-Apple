@@ -24,12 +24,14 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -55,6 +57,8 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.SplitUtil;
+import net.dv8tion.jda.api.utils.SplitUtil.Strategy;
 
 public class DiscordBot extends AbstractIdleService {
 
@@ -487,11 +491,23 @@ public class DiscordBot extends AbstractIdleService {
 
 		try {
 			List<MessageEmbed> embeds = reporting.createEmbeds();
+			List<String> urls = reporting.createURLList();
+
+			List<String> urlReplies;
+			if (urls.isEmpty()) {
+				urlReplies = ImmutableList.of();
+			} else {
+				urlReplies = SplitUtil.split(urls.stream().collect(Collectors.joining("\n")),
+						Message.MAX_CONTENT_LENGTH, true, Strategy.NEWLINE, Strategy.ANYWHERE);
+			}
 
 			if (reportingUserID.isPresent()) {
 				PrivateChannel privateChannel = jda.openPrivateChannelById(reportingUserID.get()).complete();
 				for (MessageEmbed embed : embeds) {
-					privateChannel.sendMessageEmbeds(embed).complete();
+					privateChannel.sendMessageEmbeds(embed).queue();
+				}
+				for (String urlReply : urlReplies) {
+					privateChannel.sendMessage(urlReply).queue();
 				}
 			}
 
@@ -499,7 +515,10 @@ public class DiscordBot extends AbstractIdleService {
 				TextChannel textChannel = jda.getTextChannelById(reportingChannelID.get());
 				if (textChannel != null) {
 					for (MessageEmbed embed : embeds) {
-						textChannel.sendMessageEmbeds(embed).complete();
+						textChannel.sendMessageEmbeds(embed).queue();
+					}
+					for (String urlReply : urlReplies) {
+						textChannel.sendMessage(urlReply).queue();
 					}
 				}
 			}

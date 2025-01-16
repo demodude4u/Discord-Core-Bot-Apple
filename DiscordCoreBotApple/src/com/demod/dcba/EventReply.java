@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.SplitUtil;
 import net.dv8tion.jda.api.utils.SplitUtil.Strategy;
 
@@ -126,13 +125,8 @@ public interface EventReply {
 		}
 	}
 
-	default Message replyPrivateEmbed(MessageEmbed embed, MessageEmbed... embeds) {
-		return getReplyPrivateUser().openPrivateChannel().complete().sendMessageEmbeds(embed, embeds).complete();
-	}
+	Message replyPrivateEmbed(MessageEmbed embed, MessageEmbed... embeds);
 
-	default Message replyPrivateFile(byte[] data, String filename) {
-		return getReplyPrivateUser().openPrivateChannel().complete().sendFiles(FileUpload.fromData(data, filename))
-				.complete();
-	}
+	Message replyPrivateFile(byte[] data, String filename);
 
 }

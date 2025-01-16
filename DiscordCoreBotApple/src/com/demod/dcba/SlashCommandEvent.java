@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.Interaction;
@@ -113,6 +114,22 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 			}
 		}
 		Message ret = action.setEphemeral(ephemeral).complete();
+		reporting.addReply(ret);
+		return ret;
+	}
+
+	@Override
+	public Message replyPrivateEmbed(MessageEmbed embed, MessageEmbed... embeds) {
+		PrivateChannel privateChannel = getReplyPrivateUser().openPrivateChannel().complete();
+		Message ret = privateChannel.sendMessageEmbeds(embed, embeds).complete();
+		reporting.addReply(ret);
+		return ret;
+	}
+
+	@Override
+	public Message replyPrivateFile(byte[] data, String filename) {
+		PrivateChannel privateChannel = getReplyPrivateUser().openPrivateChannel().complete();
+		Message ret = privateChannel.sendFiles(FileUpload.fromData(data, filename)).complete();
 		reporting.addReply(ret);
 		return ret;
 	}
