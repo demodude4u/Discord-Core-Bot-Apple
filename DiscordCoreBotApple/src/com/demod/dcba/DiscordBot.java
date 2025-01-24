@@ -38,6 +38,7 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
@@ -51,6 +52,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.CommandInteractionPayload;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
@@ -75,6 +77,8 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 	private Optional<ButtonHandler> buttonHandler = Optional.empty();
 	private Optional<StringSelectHandler> stringSelectHandler = Optional.empty();
+	private Optional<MessageContextHandler> messageContextHandler = Optional.empty();
+	private String messageContextLabel = null;
 
 	private final JSONObject configJson;
 
@@ -158,6 +162,11 @@ public class DiscordBot extends AbstractIdleService {
 					}
 				}
 			}
+			updateCommands = updateCommands.addCommands(commandData);
+		}
+
+		if (messageContextHandler.isPresent()) {
+			CommandData commandData = Commands.message(messageContextLabel);
 			updateCommands = updateCommands.addCommands(commandData);
 		}
 	}
@@ -327,6 +336,14 @@ public class DiscordBot extends AbstractIdleService {
 		this.customSetup = customSetup;
 	}
 
+	public void setMessageContextHandler(Optional<MessageContextHandler> messageContextHandler) {
+		this.messageContextHandler = messageContextHandler;
+	}
+
+	public void setMessageContextLabel(String messageContextLabel) {
+		this.messageContextLabel = messageContextLabel;
+	}
+
 	public void setReactionWatcher(Optional<ReactionWatcher> reactionWatcher) {
 		this.reactionWatcher = reactionWatcher;
 	}
@@ -379,6 +396,22 @@ public class DiscordBot extends AbstractIdleService {
 						if (autoCompleteHandler.isPresent()) {
 							AutoCompleteEvent autoCompleteEvent = new AutoCompleteEvent(event);
 							autoCompleteHandler.get().handleAutoComplete(autoCompleteEvent);
+						}
+					}
+
+					@Override
+					public void onMessageContextInteraction(MessageContextInteractionEvent event) {
+						if (messageContextHandler.isPresent()) {
+							CommandReporting reporting = createReporting(event);
+							reporting.addField(
+									new Field("Context", "[Message](" + event.getTarget().getJumpUrl() + ")", true));
+							try {
+								messageContextHandler.get().onMessageContextInteraction(event, reporting);
+							} catch (Exception e) {
+								e.printStackTrace();
+								reporting.addException(e);
+							}
+							submitReport(reporting);
 						}
 					}
 

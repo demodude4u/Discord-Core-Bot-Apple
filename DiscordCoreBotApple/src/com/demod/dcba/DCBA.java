@@ -31,6 +31,8 @@ public final class DCBA {
 
 		InfoBuilder setInfo(String botName);
 
+		Builder setMessageContextHandler(String label, MessageContextHandler handler);
+
 		Builder withCommandPrefix(String commandPrefix);
 
 		Builder withCustomSetup(Function<JDABuilder, JDABuilder> customSetup);
@@ -82,6 +84,11 @@ public final class DCBA {
 		@Override
 		public InfoBuilder setInfo(String botName) {
 			return builder.setInfo(botName);
+		}
+
+		@Override
+		public Builder setMessageContextHandler(String label, MessageContextHandler handler) {
+			return builder.setMessageContextHandler(label, handler);
 		}
 
 		@Override
@@ -157,6 +164,13 @@ public final class DCBA {
 		@Override
 		public InfoBuilder setInfo(String botName) {
 			bot.getInfo().setBotName(Optional.of(botName));
+			return this;
+		}
+
+		@Override
+		public Builder setMessageContextHandler(String label, MessageContextHandler handler) {
+			bot.setMessageContextHandler(Optional.of(handler));
+			bot.setMessageContextLabel(label);
 			return this;
 		}
 
