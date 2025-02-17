@@ -68,6 +68,10 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 		return interaction.getMessageChannel();
 	}
 
+	public SlashCommandInteractionEvent getRawEvent() {
+		return event;
+	}
+
 	@Override
 	public User getReplyPrivateUser() {
 		return event.getUser();
