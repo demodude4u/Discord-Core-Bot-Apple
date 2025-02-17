@@ -53,7 +53,7 @@ public class SlashCommandEvent extends ParamPayloadEvent implements EventReply {
 	}
 
 	public Guild getGuild() {
-		return interaction.getGuild();
+		return event.getGuild();
 	}
 
 	public JDA getJDA() {
