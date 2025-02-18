@@ -7,8 +7,11 @@ import java.util.Scanner;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class GuildSettings {
+	private static final Logger LOGGER = LoggerFactory.getLogger(GuildSettings.class);
 	private static final String GUILDS_FILE = "guilds.json";
 
 	private static JSONObject guildsJson = null;
@@ -30,7 +33,7 @@ public final class GuildSettings {
 			scanner.useDelimiter("\\A");
 			return new JSONObject(scanner.next());
 		} catch (JSONException | IOException e) {
-			System.out.println(GUILDS_FILE + " was not found!");
+			LOGGER.info(GUILDS_FILE + " was not found!");
 			return new JSONObject();
 		}
 	}
