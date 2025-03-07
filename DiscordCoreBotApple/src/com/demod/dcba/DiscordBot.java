@@ -515,12 +515,19 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	public synchronized void submitReport(CommandReporting reporting) {
-		reporting.getExceptionsWithBlame().stream().forEach(e -> {
-			if (e.getBlame().isPresent()) {
-				System.err.println("(" + e.getBlame().get() + ")");
+		reporting.getExceptionsWithBlame().stream().map(e -> {
+			try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
+				if (e.getBlame().isPresent()) {
+					pw.println("(" + e.getBlame().get() + ")");
+				}
+				e.getException().printStackTrace(pw);
+				pw.flush();
+				return sw.toString();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				return null;
 			}
-			e.getException().printStackTrace();
-		});
+		}).distinct().forEach(System.err::print);
 
 		try {
 			List<MessageEmbed> embeds = reporting.createEmbeds();
