@@ -27,6 +27,8 @@ public final class DCBA {
 
 		Builder addStringSelectHandler(StringSelectHandler handler);
 
+		Builder async(boolean async);
+
 		DiscordBot create();
 
 		InfoBuilder setInfo(String botName);
@@ -74,6 +76,11 @@ public final class DCBA {
 		@Override
 		public Builder addStringSelectHandler(StringSelectHandler handler) {
 			return builder.addStringSelectHandler(handler);
+		}
+
+		@Override
+		public Builder async(boolean async) {
+			return builder.async(async);
 		}
 
 		@Override
@@ -148,6 +155,12 @@ public final class DCBA {
 		@Override
 		public Builder addStringSelectHandler(StringSelectHandler handler) {
 			bot.setStringSelectHandler(Optional.of(handler));
+			return this;
+		}
+
+		@Override
+		public Builder async(boolean async) {
+			bot.setAsync(async);
 			return this;
 		}
 

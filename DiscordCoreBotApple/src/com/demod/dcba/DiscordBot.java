@@ -16,8 +16,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -71,7 +73,7 @@ public class DiscordBot extends AbstractIdleService {
 
 	private final InfoDefinition info = new InfoDefinition();
 
-	private final ExecutorService commandService = Executors.newSingleThreadExecutor();
+	private ExecutorService commandService = null;
 
 	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
@@ -90,6 +92,9 @@ public class DiscordBot extends AbstractIdleService {
 
 	private Optional<String> reportingUserID = Optional.empty();
 	private Optional<String> reportingChannelID = Optional.empty();
+
+	private boolean async;
+	private final ConcurrentHashMap<String, Future<?>> activeUsers = new ConcurrentHashMap<>();
 
 	DiscordBot() {
 		configJson = loadConfig();
@@ -302,6 +307,12 @@ public class DiscordBot extends AbstractIdleService {
 	}
 
 	void initialize() {
+		if (async) {
+			commandService = Executors.newWorkStealingPool();
+		} else {
+			commandService = Executors.newSingleThreadExecutor();
+		}
+
 		if (!commandSlash.containsKey(COMMAND_INFO)) {
 			addCommand(createCommandInfo());
 		}
@@ -322,6 +333,10 @@ public class DiscordBot extends AbstractIdleService {
 			System.exit(0);
 			return null;
 		}
+	}
+
+	public void setAsync(boolean async) {
+		this.async = async;
 	}
 
 	public void setButtonHandler(Optional<ButtonHandler> buttonHandler) {
@@ -373,18 +388,27 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onButtonInteraction(ButtonInteractionEvent event) {
 						if (buttonHandler.isPresent()) {
-							// TODO change event class to a delegate version that records replies for
-							// reporting
-							CommandReporting reporting = createReporting(event);
-							reporting.addField(
-									new Field("Context", "[Message](" + event.getMessage().getJumpUrl() + ")", true));
-							try {
-								buttonHandler.get().onButtonInteraction(event, reporting);
-							} catch (Exception e) {
-								e.printStackTrace();
-								reporting.addException(e);
+							Future<?> future = activeUsers.get(event.getUser().getId());
+							if (future != null && !future.isDone()) {
+								event.reply("I am already processing your selection, please wait...").setEphemeral(true)
+										.complete();
+								return;
 							}
-							submitReport(reporting);
+							future = commandService.submit(() -> {
+								CommandReporting reporting = createReporting(event);
+								reporting.addField(new Field("Context",
+										"[Message](" + event.getMessage().getJumpUrl() + ")", true));
+								try {
+									buttonHandler.get().onButtonInteraction(event, reporting);
+								} catch (Exception e) {
+									e.printStackTrace();
+									reporting.addException(e);
+								} finally {
+									submitReport(reporting);
+									activeUsers.remove(event.getUser().getId());
+								}
+							});
+							activeUsers.put(event.getUser().getId(), future);
 						}
 					}
 
@@ -394,24 +418,29 @@ public class DiscordBot extends AbstractIdleService {
 								.get(event.getFullCommandName().replace(' ', '/'));
 						Optional<AutoCompleteHandler> autoCompleteHandler = commandDefinition.getAutoCompleteHandler();
 						if (autoCompleteHandler.isPresent()) {
-							AutoCompleteEvent autoCompleteEvent = new AutoCompleteEvent(event);
-							autoCompleteHandler.get().handleAutoComplete(autoCompleteEvent);
+							commandService.submit(() -> {
+								AutoCompleteEvent autoCompleteEvent = new AutoCompleteEvent(event);
+								autoCompleteHandler.get().handleAutoComplete(autoCompleteEvent);
+							});
 						}
 					}
 
 					@Override
 					public void onMessageContextInteraction(MessageContextInteractionEvent event) {
 						if (messageContextHandler.isPresent()) {
-							CommandReporting reporting = createReporting(event);
-							reporting.addField(
-									new Field("Context", "[Message](" + event.getTarget().getJumpUrl() + ")", true));
-							try {
-								messageContextHandler.get().onMessageContextInteraction(event, reporting);
-							} catch (Exception e) {
-								e.printStackTrace();
-								reporting.addException(e);
-							}
-							submitReport(reporting);
+							commandService.submit(() -> {
+								CommandReporting reporting = createReporting(event);
+								reporting.addField(new Field("Context",
+										"[Message](" + event.getTarget().getJumpUrl() + ")", true));
+								try {
+									messageContextHandler.get().onMessageContextInteraction(event, reporting);
+								} catch (Exception e) {
+									e.printStackTrace();
+									reporting.addException(e);
+								} finally {
+									submitReport(reporting);
+								}
+							});
 						}
 					}
 
@@ -477,18 +506,27 @@ public class DiscordBot extends AbstractIdleService {
 					@Override
 					public void onStringSelectInteraction(StringSelectInteractionEvent event) {
 						if (stringSelectHandler.isPresent()) {
-							// TODO change event class to a delegate version that records replies for
-							// reporting
-							CommandReporting reporting = createReporting(event);
-							reporting.addField(
-									new Field("Context", "[Message](" + event.getMessage().getJumpUrl() + ")", true));
-							try {
-								stringSelectHandler.get().onStringSelectInteraction(event, reporting);
-							} catch (Exception e) {
-								e.printStackTrace();
-								reporting.addException(e);
+							Future<?> future = activeUsers.get(event.getUser().getId());
+							if (future != null && !future.isDone()) {
+								event.reply("I am already processing your selection, please wait...").setEphemeral(true)
+										.complete();
+								return;
 							}
-							submitReport(reporting);
+							future = commandService.submit(() -> {
+								CommandReporting reporting = createReporting(event);
+								reporting.addField(new Field("Context",
+										"[Message](" + event.getMessage().getJumpUrl() + ")", true));
+								try {
+									stringSelectHandler.get().onStringSelectInteraction(event, reporting);
+								} catch (Exception e) {
+									e.printStackTrace();
+									reporting.addException(e);
+								} finally {
+									submitReport(reporting);
+									activeUsers.remove(event.getUser().getId());
+								}
+							});
+							activeUsers.put(event.getUser().getId(), future);
 						}
 					}
 				});
