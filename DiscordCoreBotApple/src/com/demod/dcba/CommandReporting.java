@@ -131,7 +131,7 @@ public class CommandReporting {
 		}
 
 		if (command != null) {
-			builder.addField("Command", limitContent(1000, command), false);
+			builder.addField("Command", limitContent(250, command), false);
 		}
 
 		if (commandStart != null) {
