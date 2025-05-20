@@ -110,7 +110,7 @@ public final class DCBA {
 
 	}
 
-	private static class BuilderImpl implements Builder, InfoBuilder {
+	private static class BuilderImpl implements InfoBuilder {
 		DiscordBot bot = new DiscordBot();
 
 		SlashCommandBuilderImpl slashCommandBuilder = new SlashCommandBuilderImpl(this);
