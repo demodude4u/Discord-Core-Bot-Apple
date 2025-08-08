@@ -9,8 +9,6 @@ public class HelloExample {
 
 	public static void main(String[] args) throws IOException {
 		DiscordBot bot = DCBA.builder()//
-				.withCommandPrefix("!")//
-				//
 				.addSlashCommand("hello", "The bot will say hi to you!",
 						event -> event.reply("Hi " + event.getUser().getAsMention() + "!"))//
 				//

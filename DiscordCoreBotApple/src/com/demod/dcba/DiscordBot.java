@@ -75,7 +75,6 @@ public class DiscordBot extends AbstractIdleService {
 
 	private ExecutorService commandService = null;
 
-	private Optional<String> commandPrefix = Optional.empty();
 	private Optional<ReactionWatcher> reactionWatcher = Optional.empty();
 	private Optional<ButtonHandler> buttonHandler = Optional.empty();
 	private Optional<StringSelectHandler> stringSelectHandler = Optional.empty();
@@ -270,10 +269,6 @@ public class DiscordBot extends AbstractIdleService {
 		return new CommandReporting(author, authorIconURL, command, Instant.now());
 	}
 
-	public Optional<String> getCommandPrefix() {
-		return commandPrefix;
-	}
-
 	private String getDurationFormatted(LocalDateTime then, LocalDateTime now) {
 		List<ChronoUnit> units = Arrays.asList(//
 				ChronoUnit.YEARS, //
@@ -343,10 +338,6 @@ public class DiscordBot extends AbstractIdleService {
 		this.buttonHandler = buttonHandler;
 	}
 
-	public void setCommandPrefix(Optional<String> commandPrefix) {
-		this.commandPrefix = commandPrefix;
-	}
-
 	public void setCustomSetup(Function<JDABuilder, JDABuilder> customSetup) {
 		this.customSetup = customSetup;
 	}
@@ -377,10 +368,6 @@ public class DiscordBot extends AbstractIdleService {
 		info.addTechnology("[DCBA](https://github.com/demodude4u/Discord-Core-Bot-Apple)", Optional.empty(),
 				"Discord Core Bot Apple");
 		info.addTechnology("[JDA](https://github.com/discord-jda/JDA)", Optional.of("5.2.1"), "Java Discord API");
-
-		if (configJson.has("command_prefix")) {
-			setCommandPrefix(Optional.of(configJson.getString("command_prefix")));
-		}
 
 		JDABuilder builder = JDABuilder.createDefault(configJson.getString("bot_token"))//
 				.setEnableShutdownHook(false)//

@@ -18,9 +18,6 @@ public class CommandTesting {
 
 	public static void main(String[] args) throws IOException {
 		DiscordBot bot = DCBA.builder()//
-				.withCommandPrefix("!")//
-				//
-				//
 				.addSlashCommand("params", "The bot will recite the parameters that are recognized.", event -> {
 					EmbedBuilder embed = new EmbedBuilder();
 					event.optParamBoolean("boolean").ifPresent(o -> embed.addField("boolean", "" + o, true));
