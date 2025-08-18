@@ -556,6 +556,9 @@ public class DiscordBot extends AbstractIdleService {
 
 		try {
 			List<MessageEmbed> embeds = reporting.createEmbeds();
+			if (embeds.isEmpty()) {
+				return;
+			}
 			List<String> urls = reporting.createURLList();
 
 			List<String> urlReplies;

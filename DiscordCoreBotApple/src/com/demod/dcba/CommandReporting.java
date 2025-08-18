@@ -68,6 +68,7 @@ public class CommandReporting {
 	private final List<Field> fields = new ArrayList<>();
 	private final List<String> replyImageAttachments = new ArrayList<>();
 	private final List<String> replyFileAttachments = new ArrayList<>();
+	private boolean suppressed = false;
 
 	public CommandReporting(String author, String authorIconURL, Instant commandStart) {
 		this.author = author;
@@ -119,7 +120,15 @@ public class CommandReporting {
 		elevateLevel(Level.WARNING);
 	}
 
+	public void suppress() {
+		suppressed = true;
+	}
+
 	public List<MessageEmbed> createEmbeds() {
+		if (suppressed) {
+			return ImmutableList.of();
+		}
+		
 		EmbedBuilder builder = new EmbedBuilder();
 		builder.setAuthor(author, null, authorIconURL);
 		if (commandStart != null) {
