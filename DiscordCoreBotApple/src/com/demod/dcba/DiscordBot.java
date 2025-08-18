@@ -35,6 +35,7 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
@@ -46,6 +47,7 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.component.GenericSelectMenuInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveAllEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
@@ -79,6 +81,7 @@ public class DiscordBot extends AbstractIdleService {
 	private Optional<ButtonHandler> buttonHandler = Optional.empty();
 	private Optional<StringSelectHandler> stringSelectHandler = Optional.empty();
 	private Optional<MessageContextHandler> messageContextHandler = Optional.empty();
+	private Optional<PrivateMessageHandler> privateMessageHandler = Optional.empty();
 	private String messageContextLabel = null;
 
 	private final JSONObject configJson;
@@ -247,6 +250,25 @@ public class DiscordBot extends AbstractIdleService {
 		return new CommandReporting(author, authorIconURL, command, Instant.now());
 	}
 
+	private CommandReporting createReporting(MessageReceivedEvent event) {
+		String author;
+		if (event.getChannelType() == ChannelType.PRIVATE) {
+			author = event.getAuthor().getName();
+		} else {
+			author = event.getGuild().getName() + " / #" + event.getChannel().getName() + " / "
+					+ event.getAuthor().getName();
+		}
+
+		String authorIconURL = event.getAuthor().getEffectiveAvatarUrl();
+		Message message = event.getMessage();
+		String command = message.getContentStripped();
+		for (Attachment attachment : message.getAttachments()) {
+			command += " " + attachment.getUrl();
+		}
+
+		return new CommandReporting(author, authorIconURL, command, Instant.now());
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private CommandReporting createReporting(GenericComponentInteractionCreateEvent event) {
 		String author;
@@ -356,6 +378,10 @@ public class DiscordBot extends AbstractIdleService {
 
 	public void setStringSelectHandler(Optional<StringSelectHandler> stringSelectHandler) {
 		this.stringSelectHandler = stringSelectHandler;
+	}
+
+	public void setPrivateMessageHandler(Optional<PrivateMessageHandler> privateMessageHandler) {
+		this.privateMessageHandler = privateMessageHandler;
 	}
 
 	@Override
@@ -514,6 +540,29 @@ public class DiscordBot extends AbstractIdleService {
 								}
 							});
 							activeUsers.put(event.getUser().getId(), future);
+						}
+					}
+
+					@Override
+					public void onMessageReceived(MessageReceivedEvent event) {
+						if (event.getChannelType() != ChannelType.PRIVATE) {
+							return;
+						}
+						if (event.getAuthor().isBot()) {
+							return;
+						}
+						if (privateMessageHandler.isPresent()) {
+							commandService.submit(() -> {
+								CommandReporting reporting = createReporting(event);
+								try {
+									privateMessageHandler.get().onPrivateMessageReceived(event, reporting);
+								} catch (Exception e) {
+									e.printStackTrace();
+									reporting.addException(e);
+								} finally {
+									submitReport(reporting);
+								}
+							});
 						}
 					}
 				});
